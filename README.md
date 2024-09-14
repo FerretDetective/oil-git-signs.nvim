@@ -1,0 +1,1 @@
+# oil-git-signs.nvim
