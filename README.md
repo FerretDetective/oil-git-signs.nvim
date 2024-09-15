@@ -160,8 +160,7 @@ local defaults = {
                 ["[H"] = {
                     desc = "Jump to first git status",
                     callback = function()
-                        local buf = vim.api.nvim_get_current_buf()
-                        if not vim.b[buf].oil_git_signs_exists then
+                        if not vim.b.oil_git_signs_exists then
                             return
                         end
                         require("oil-git-signs").jump_to_status("up", -vim.v.count1)
@@ -170,8 +169,7 @@ local defaults = {
                 ["]H"] = {
                     desc = "Jump to last git status",
                     callback = function()
-                        local buf = vim.api.nvim_get_current_buf()
-                        if not vim.b[buf].oil_git_signs_exists then
+                        if not vim.b.oil_git_signs_exists then
                             return
                         end
                         require("oil-git-signs").jump_to_status("down", -vim.v.count1)
@@ -180,8 +178,7 @@ local defaults = {
                 ["[h"] = {
                     desc = "Jump to prev git status",
                     callback = function()
-                        local buf = vim.api.nvim_get_current_buf()
-                        if not vim.b[buf].oil_git_signs_exists then
+                        if not vim.b.oil_git_signs_exists then
                             return
                         end
                         require("oil-git-signs").jump_to_status("up", vim.v.count1)
@@ -190,8 +187,7 @@ local defaults = {
                 ["]h"] = {
                     desc = "Jump to next git status",
                     callback = function()
-                        local buf = vim.api.nvim_get_current_buf()
-                        if not vim.b[buf].oil_git_signs_exists then
+                        if not vim.b.oil_git_signs_exists then
                             return
                         end
                         require("oil-git-signs").jump_to_status("down", vim.v.count1)
@@ -234,7 +230,8 @@ local defaults = {
                             "diff",
                             source = function()
                                 local stat = vim.b.oil_git_signs_summary
-                                if stat ~= nil then
+
+                                if stat then
                                     return {
                                         added = stat.index.added + stat.working_tree.added,
                                         modified = stat.index.modified + stat.working_tree.modified,
@@ -460,7 +457,7 @@ buffer.
 
 ##### Type
 ```
-vim.b[bufnr].oil_git_signs_exists: boolean
+vim.b.oil_git_signs_exists: boolean
 ```
 
 #### vim.b.oil_git_signs_summary
@@ -471,7 +468,7 @@ your status line. See [Lualine Integration](#lualine-integration) for an example
 
 ##### Type
 ```
-vim.b[bufnr].oil_git_signs_summary: {
+vim.b.oil_git_signs_summary: {
     working_tree = { 
         added: integer, 
         removed: integer,
