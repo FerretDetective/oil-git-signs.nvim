@@ -137,7 +137,7 @@ local defaults = {
         -- stylua: ignore end
     },
     -- used to create buffer local keymaps when oil-git-signs attaches to a buffer 
-    -- note: the buffer option always be overwritten
+    -- note: the buffer option will always be overwritten
     ---@type { [1]: string|string[], [2]: string, [3]: string|function, [4]: vim.keymap.set.Opts? }[]
     keymaps = {},
 }
