@@ -10,6 +10,7 @@ Add git information about your files when working with [oil.nvim](https://github
 - [Options](#options)
 - [Recipes](#recipes)
 - [API](#api)
+- [Highlights](#highlights)
 
 ## Requirements
 - Neovim 0.8+
@@ -488,3 +489,21 @@ vim.b.oil_git_signs_summary: {
     },
 }
 ```
+
+## Highlights
+These are the default highlight and icons configurations, however they can all be customized see
+[Options](#options)
+
+| Default Icon    | Default Link  | Index Highlight Group            | Working Tree Highlight Group           |
+| --------------- | ------------- | -------------------------------- | -------------------------------------- |
+| ` `             | `Normal`      | `OilGitSignsIndexUnmodified`     | `OilGitSignsWorkingTreeUnmodified`     |
+| `m`             | `OilChange`   | `OilGitSignsIndexSubModModified` | `OilGitSignsWorkingTreeSubModModified` |
+| `M`             | `OilChange`   | `OilGitSignsIndexModified`       | `OilGitSignsWorkingTreeModified`       |
+| `T`             | `OilChange`   | `OilGitSignsIndexTypeChanged`    | `OilGitSignsWorkingTreeTypeChanged`    |
+| `A`             | `OilCreate`   | `OilGitSignsIndexAdded`          | `OilGitSignsWorkingTreeAdded`          |
+| `D`             | `OilDelete`   | `OilGitSignsIndexDeleted`        | `OilGitSignsWorkingTreeDeleted`        |
+| `R`             | `OilMove`     | `OilGitSignsIndexRenamed`        | `OilGitSignsWorkingTreeRenamed`        |
+| `C`             | `OilCopy`     | `OilGitSignsIndexCopied`         | `OilGitSignsWorkingTreeCopied`         |
+| `U`             | `OilChange`   | `OilGitSignsIndexUnmerged`       | `OilGitSignsWorkingTreeUnmerged`       |
+| `?`             | `OilCreate`   | `OilGitSignsIndexUntracked`      | `OilGitSignsWorkingTreeUntracked`      |
+| `!`             | `NonText`     | `OilGitSignsIndexIgnored`        | `OilGitSignsWorkingTreeIgnored`        |
