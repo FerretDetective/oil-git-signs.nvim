@@ -491,8 +491,8 @@ vim.b.oil_git_signs_summary: {
 ```
 
 ## Highlights
-These are the default highlight and icons configurations, however they can all be customized see
-[Options](#options)
+These are the default highlight and icons configurations which can all be customized. 
+See [Options](#options)
 
 | Default Icon    | Default Link  | Index Highlight Group            | Working Tree Highlight Group           |
 | --------------- | ------------- | -------------------------------- | -------------------------------------- |
