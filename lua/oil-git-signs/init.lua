@@ -187,6 +187,11 @@ end
 ---@param count integer?  1 by default
 ---@param statuses { index: oil_git_signs.GitStatus[], working_tree: oil_git_signs.GitStatus[] }?  all by default
 function M.jump_to_status(direction, count, statuses)
+    if not vim.b.oil_git_signs_exists then
+        vim.notify("OilGitSigns: not a git repository", vim.log.levels.ERROR)
+        return
+    end
+
     if count == 0 then
         return
     end
@@ -406,7 +411,6 @@ function M.setup(opts)
             if vim.b[evt.buf].oil_git_signs_exists then
                 return
             end
-            vim.b[evt.buf].oil_git_signs_exists = true
 
             local path = require("oil").get_current_dir(evt.buf)
             -- need extra check in case path isn't actually present in the fs
@@ -419,6 +423,8 @@ function M.setup(opts)
             if git_root == nil then
                 return
             end
+
+            vim.b[evt.buf].oil_git_signs_exists = true
 
             local current_status = nil
             local current_summary = nil
