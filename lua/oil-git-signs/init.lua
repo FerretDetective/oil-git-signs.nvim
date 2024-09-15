@@ -379,6 +379,10 @@ M.defaults = {
         [M.GitStatus.IGNORED]          = nil,
         -- stylua: ignore end
     },
+    -- used to create buffer local keymaps when oil-git-signs attaches to a buffer 
+    -- note: the buffer option always be overwritten
+    ---@type { [1]: string|string[], [2]: string, [3]: string|function, [4]: vim.keymap.set.Opts? }[]
+    keymaps = {},
 }
 
 ---@type oil_git_signs.Config
@@ -425,6 +429,11 @@ function M.setup(opts)
             end
 
             vim.b[evt.buf].oil_git_signs_exists = true
+
+            for _, keymap in ipairs(M.options.keymaps) do
+                keymap[4] = vim.tbl_deep_extend("force", keymap[4] or {}, { buffer = evt.buf })
+                vim.keymap.set(unpack(keymap))
+            end
 
             local current_status = nil
             local current_summary = nil

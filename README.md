@@ -135,6 +135,10 @@ local defaults = {
         [ogs.GitStatus.IGNORED]          = nil,
         -- stylua: ignore end
     },
+    -- used to create buffer local keymaps when oil-git-signs attaches to a buffer 
+    -- note: the buffer option always be overwritten
+    ---@type { [1]: string|string[], [2]: string, [3]: string|function, [4]: vim.keymap.set.Opts? }[]
+    keymaps = {},
 }
 ```
 
@@ -146,53 +150,54 @@ local defaults = {
 
 ```lua
 {
-    { "FerretDetective/oil-git-signs.nvim", ft = "oil", opts = {} },
-    {
-        "stevearc/oil.nvim",
-        dependencies = { { "echasnovski/mini.icons", opts = {} } },
-        -- dependencies = { "nvim-tree/nvim-web-devicons" }, -- use if prefer nvim-web-devicons
-        opts = {
-            win_options = {
-                signcolumn = "yes:2",
-                statuscolumn = "",
-            }
-            keymaps = {
-                ["[H"] = {
-                    desc = "Jump to first git status",
-                    callback = function()
-                        if not vim.b.oil_git_signs_exists then
-                            return
-                        end
-                        require("oil-git-signs").jump_to_status("up", -vim.v.count1)
-                    end,
-                },
-                ["]H"] = {
-                    desc = "Jump to last git status",
-                    callback = function()
-                        if not vim.b.oil_git_signs_exists then
-                            return
-                        end
-                        require("oil-git-signs").jump_to_status("down", -vim.v.count1)
-                    end,
-                },
-                ["[h"] = {
-                    desc = "Jump to prev git status",
-                    callback = function()
-                        if not vim.b.oil_git_signs_exists then
-                            return
-                        end
-                        require("oil-git-signs").jump_to_status("up", vim.v.count1)
-                    end,
-                },
-                ["]h"] = {
-                    desc = "Jump to next git status",
-                    callback = function()
-                        if not vim.b.oil_git_signs_exists then
-                            return
-                        end
-                        require("oil-git-signs").jump_to_status("down", vim.v.count1)
-                    end,
-                },
+
+    "FerretDetective/oil-git-signs.nvim",
+    ft = "oil",
+    opts = {
+        keymaps = {
+            {
+                "n",
+                "[H",
+                function()
+                    if not vim.b.oil_git_signs_exists then
+                        return
+                    end
+                    require("oil-git-signs").jump_to_status("up", -vim.v.count1)
+                end,
+                { desc = "Jump to first git status" },
+            },
+            {
+                "n",
+                "]H",
+                function()
+                    if not vim.b.oil_git_signs_exists then
+                        return
+                    end
+                    require("oil-git-signs").jump_to_status("down", -vim.v.count1)
+                end,
+                { desc = "Jump to last git status" },
+            },
+            {
+                "n",
+                "[h",
+                function()
+                    if not vim.b.oil_git_signs_exists then
+                        return
+                    end
+                    require("oil-git-signs").jump_to_status("up", vim.v.count1)
+                end,
+                { desc = "Jump to prev git status" },
+            },
+            {
+                "n",
+                "]h",
+                function()
+                    if not vim.b.oil_git_signs_exists then
+                        return
+                    end
+                    require("oil-git-signs").jump_to_status("down", vim.v.count1)
+                end,
+                { desc = "Jump to next git status" },
             },
         },
     },
@@ -420,6 +425,7 @@ ogs.Config: {
     working_tree: table<ogs.GitStatus, { icon: string, hl_group: string }>,
     status_priority: table<ogs.GitStatus, integer>,
     status_classification: table<ogs.GitStatus, "added"|"removed"|"modified"|nil>,
+    keymaps: { [1]: string|string[], [2]: string, [3]: string|function, [4]: vim.keymap.set.Opts? }[]
 }
 ```
 
@@ -437,6 +443,7 @@ ogs.Config: {
     working_tree: table<ogs.GitStatus, { icon: string, hl_group: string }>,
     status_priority: table<ogs.GitStatus, integer>,
     status_classification: table<ogs.GitStatus, "added"|"removed"|"modified"|nil>,
+    keymaps: { [1]: string|string[], [2]: string, [3]: string|function, [4]: vim.keymap.set.Opts? }[]
 }
 ```
 
