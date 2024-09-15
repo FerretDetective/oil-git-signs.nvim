@@ -362,7 +362,7 @@ M.defaults = {
         [M.GitStatus.UNMODIFIED]       = 0,
         -- stylua: ignore end
     },
-    -- used when creating the summary
+    -- used when creating the summary to determine how to count each status type
     ---@type table<oil_git_signs.GitStatus, "added"|"removed"|"modified"|nil>
     status_classification = {
         -- stylua: ignore start
