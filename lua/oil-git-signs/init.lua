@@ -186,7 +186,7 @@ end
 ---@param direction "up"|"down"
 ---@param count integer?  1 by default
 ---@param statuses { index: oil_git_signs.GitStatus[], working_tree: oil_git_signs.GitStatus[] }?  all by default
-function M.nav_status(direction, count, statuses)
+function M.jump_to_status(direction, count, statuses)
     if count == 0 then
         return
     end
