@@ -432,7 +432,7 @@ function M.setup(opts)
                 group = augroup,
                 callback = vim.schedule_wrap(function()
                     current_status, current_summary = query_git_status(path)
-                    vim.b[evt.buf].oil_git_summary = current_summary
+                    vim.b[evt.buf].oil_git_signs_summary = current_summary
 
                     update_status_ext_marks(current_status, evt.buf, namespace)
                 end),
@@ -442,7 +442,7 @@ function M.setup(opts)
                 group = augroup,
                 callback = vim.schedule_wrap(function()
                     current_status, current_summary = query_git_status(path)
-                    vim.b[evt.buf].oil_git_summary = current_summary
+                    vim.b[evt.buf].oil_git_signs_summary = current_summary
 
                     update_status_ext_marks(current_status, evt.buf, namespace)
                 end),
