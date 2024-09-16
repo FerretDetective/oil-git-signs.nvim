@@ -400,6 +400,7 @@ M.options = nil
 ---@param opts oil_git_signs.Config?
 function M.setup(opts)
     if not vim.fn.executable("git") then
+        vim.notify("OilGitSigns: no executable git detected", vim.log.levels.ERROR)
         return
     end
 
