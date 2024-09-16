@@ -59,7 +59,7 @@ local function parse_git_status(raw_status)
     return entry, index, working_tree
 end
 
----Update the ext marks for the current buffer
+---Get the git status for items in a given directory
 ---@param path string
 ---@return table<string, oil_git_signs.EntryStatus?>
 ---@return oil_git_signs.StatusSummary
@@ -127,7 +127,7 @@ local function query_git_status(path)
     return statuses, summary
 end
 
----Create the status ext_marks for the current buffer
+---Create/update the status ext_marks for the current buffer
 ---@param status table<string, oil_git_signs.EntryStatus?>
 ---@param buffer integer
 ---@param namespace integer
@@ -163,14 +163,14 @@ local function update_status_ext_marks(status, buffer, namespace)
     end
 end
 
----Generate a augroup for a buffer and return it
+---Generate an augroup for a given buffer
 ---@param buffer integer buf_nr
 ---@return integer aug_id
 local function buf_get_augroup(buffer)
     return vim.api.nvim_create_augroup(("OilGitSigns_buf-%d"):format(buffer), {})
 end
 
----Generate a namespace for a buffer and return it
+---Generate a namespace for a given buffer
 ---@param buffer integer buf_nr
 ---@return integer ns_id
 local function buf_get_namespace(buffer)
