@@ -64,6 +64,10 @@ end
 ---@return table<string, oil_git_signs.EntryStatus?>
 ---@return oil_git_signs.StatusSummary
 local function query_git_status(path)
+    if vim.fn.isdirectory(path) == 0 then
+        return {}, new_summary()
+    end
+
     -- could use `--porcelain` here for guaranteed compatibility, but parsing it is more diffciult
     -- due to it not being reported as a path relative the the cwd
     local cmd = { "git", "-c", "status.relativePaths=true", "status", "--short" }
