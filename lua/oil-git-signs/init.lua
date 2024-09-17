@@ -299,12 +299,12 @@ end
 
 ---@class oil_git_signs.Config
 M.defaults = {
-    -- used to control whether statuses for the index should be display on a per entry basis
+    -- used to control whether statuses for the index should be displayed on a per entry basis
     ---@type fun(entry_name: string, index_status: oil_git_signs.GitStatus): boolean
     show_index = function()
         return true
     end,
-    -- used to control whether statuses for the working tree should be display on a per entry basis
+    -- used to control whether statuses for the working tree should be displayed on a per entry basis
     ---@type fun(entry_name: string, working_tree_status: oil_git_signs.GitStatus): boolean
     show_working_tree = function()
         return true

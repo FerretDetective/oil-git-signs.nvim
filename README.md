@@ -52,12 +52,12 @@ wouldn't work.
 local ogs = require("oil-git-signs")
 
 local defaults = {
-    -- used to control whether statuses for the index should be display on a per entry basis
+    -- used to control whether statuses for the index should be displayed on a per entry basis
     ---@type fun(entry_name: string, index_status: oil_git_signs.GitStatus): boolean
     show_index = function()
         return true
     end,
-    -- used to control whether statuses for the working tree should be display on a per entry basis
+    -- used to control whether statuses for the working tree should be displayed on a per entry basis
     ---@type fun(entry_name: string, working_tree_status: oil_git_signs.GitStatus): boolean
     show_working_tree = function()
         return true
@@ -136,7 +136,7 @@ local defaults = {
         [ogs.GitStatus.IGNORED]          = nil,
         -- stylua: ignore end
     },
-    -- used to create buffer local keymaps when oil-git-signs attaches to a buffer 
+    -- used to create buffer local keymaps when oil-git-signs attaches to a buffer
     -- note: the buffer option will always be overwritten
     ---@type { [1]: string|string[], [2]: string, [3]: string|function, [4]: vim.keymap.set.Opts? }[]
     keymaps = {},
@@ -450,7 +450,7 @@ ogs.Config: {
 
 #### ogs.setup
 ##### Description
-This is the function that sets up this plugin. It must be called for it to work. If not options are
+This is the function that sets up this plugin. It must be called for it to work. If no options are
 passed the default configuration will be used. See [Options](#options) for more details.
 
 ##### Type
