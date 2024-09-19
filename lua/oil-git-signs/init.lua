@@ -409,6 +409,7 @@ function M.setup(opts)
 
     vim.api.nvim_create_autocmd("FileType", {
         pattern = "oil",
+        desc = "main oil-git-signs trigger",
         group = vim.api.nvim_create_augroup("OilGitSigns", {}),
         ---@param evt oil_git_signs.AutoCmdEvent
         callback = function(evt)
@@ -441,9 +442,10 @@ function M.setup(opts)
             local namespace = buf_get_namespace(evt.buf)
             local augroup = buf_get_augroup(evt.buf)
 
-            -- only update ext_marks after oil has finished mutation or it has entered
+            -- only update git status & ext_marks after oil has finished mutation or it has entered/reloaded
             vim.api.nvim_create_autocmd("User", {
                 pattern = "OilEnter",
+                desc = "update git status & extmarks on first load and refresh of oil buf",
                 group = augroup,
                 callback = vim.schedule_wrap(function()
                     current_status, current_summary = query_git_status(path)
@@ -454,6 +456,7 @@ function M.setup(opts)
             })
             vim.api.nvim_create_autocmd("User", {
                 pattern = "OilMutationComplete",
+                desc = "update git status & extmarks when oil mutates the fs",
                 group = augroup,
                 callback = vim.schedule_wrap(function()
                     current_status, current_summary = query_git_status(path)
@@ -467,6 +470,7 @@ function M.setup(opts)
             -- helps performance by moving the slow clearing operation to unused time
             vim.api.nvim_create_autocmd("User", {
                 pattern = "OilActionsPre",
+                desc = "clear extmarks before any oil actions occur",
                 group = augroup,
                 callback = vim.schedule_wrap(function()
                     vim.api.nvim_buf_clear_namespace(evt.buf, namespace, 0, -1)
@@ -476,6 +480,7 @@ function M.setup(opts)
             -- make sure to clean up auto commands when oil deletes the buffer
             vim.api.nvim_create_autocmd("BufWipeout", {
                 buffer = evt.buf,
+                desc = "cleanup oil-git-signs autocmds when oil unloads the buf",
                 once = true,
                 callback = vim.schedule_wrap(function()
                     vim.api.nvim_del_augroup_by_id(augroup)
