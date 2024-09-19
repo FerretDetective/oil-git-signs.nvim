@@ -208,7 +208,35 @@ local defaults = {
 </details>
 
 ### Lualine Integration
+
 <details>
+    <summary>
+        Improved integration with lualine to show git information in your statusline when in an oil buffer.
+    </summary>
+
+This plugin provides a lualine component for retrieving the index and/or the working_tree status as
+a summary similar to lualine's built-in diff component.
+
+The component is called `oil_git_signs_diff` and provides the following additional configuration
+options from the standard (non-diff) lualine defaults.
+
+```
+oil_git_signs.LualineConfig: {
+    diff: {
+        index: ("added" | "modified" | "removed")[],
+        working_tree: ("added" | "modified" | "removed")[],
+    },
+}
+```
+
+These arrays represent the values that will be taken from index/working tree to generate the
+summary. The default configuration includes added, modified, & removed from both the index and
+working tree.
+
+To change what git status corresponds to what type in the summary, see `status_classification` in
+[Options](#options)
+
+The following is an example configuration which makes use of this component.
 
 ```lua
 {
@@ -232,21 +260,24 @@ local defaults = {
                     },
                     lualine_b = {
                         "branch",
-                        {
-                            "diff",
-                            source = function()
-                                local stat = vim.b.oil_git_signs_summary
 
-                                if stat then
-                                    return {
-                                        added = stat.index.added + stat.working_tree.added,
-                                        modified = stat.index.modified + stat.working_tree.modified,
-                                        removed = stat.index.removed + stat.working_tree.removed,
-                                    }
-                                end
-                            end,
-                        },
-                        "diagnostics",
+                        ---default
+                        "oil_git_signs_diff",
+
+                        ---include working tree info only
+                        -- { "oil_git_signs_diff", diff = { index = {} } },
+
+                        ---include index info only
+                        -- { "oil_git_signs_diff", diff = { working_tree = {} }},
+
+                        ---include only added & modified
+                        -- {
+                        --     "oil_git_signs_diff",
+                        --     diff = {
+                        --         index = { "added", "modified" },
+                        --         working_tree = { "added", "modified" },
+                        --     },
+                        -- },
                     },
                     lualine_x = {},
                     lualine_y = { "progress" },
