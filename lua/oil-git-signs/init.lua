@@ -254,11 +254,6 @@ function M.jump_to_status(direction, count, statuses)
             end
 
             if count == 0 then
-                -- HACK: sometimes when really large dirs (>1k) are saved and this function is called
-                -- to get the last row, `row` will be larger than the size of the buffer. Similarly
-                -- when called to get the first row it will hang
-                row = math.min(row, vim.api.nvim_buf_line_count(buf))
-
                 vim.api.nvim_win_set_cursor(win, { row, 1 })
                 return
             end
@@ -465,6 +460,16 @@ function M.setup(opts)
                     vim.b[evt.buf].oil_git_signs_summary = current_summary
 
                     update_status_ext_marks(current_status, evt.buf, namespace)
+                end),
+            })
+
+            -- makes sure that the extmarks are cleared to prevent OOB cursor jumps and
+            -- helps performance by moving the slow clearing operation to unused time
+            vim.api.nvim_create_autocmd("User", {
+                pattern = "OilActionsPre",
+                group = augroup,
+                callback = vim.schedule_wrap(function()
+                    vim.api.nvim_buf_clear_namespace(evt.buf, namespace, 0, -1)
                 end),
             })
 
