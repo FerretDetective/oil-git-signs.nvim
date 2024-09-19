@@ -148,6 +148,9 @@ local defaults = {
 ### Navigation Keymaps
 
 <details>
+    <summary>
+        Examples of some standard keymaps for jumping to changed files within the oil buffer.
+    </summary>
 
 ```lua
 {
@@ -293,9 +296,12 @@ The following is an example configuration which makes use of this component.
 
 </details>
 
-### Integration with oil git-ignore recipe
+### Integration with Oil Git Ignore Recipe
 
 <details>
+    <summary>
+        Fixes issues that occur when hiding files that are ignored by git.
+    </summary>
 
 This fixes issues integrating this plugin when using 
 '[Hide gitignored files and show git tracked hidden
