@@ -2,7 +2,7 @@
 
 Add git information about your files when working with [oil.nvim](https://github.com/stevearc/oil.nvim).
 
-![An image showcasing this plugin](https://cdn.discordapp.com/attachments/870128496758902854/1284731160831852604/Screenshot_20240914_222206.png?ex=66e7b2a1&is=66e66121&hm=be64b534b0ada84c2cbe3ed60aeec039040f8b68f85b5baf6919e086495841a0&)
+![An image showcasing this plugin](https://camo.githubusercontent.com/b241797e63283be9dee80bc08bbef56fb989b7081f1b64dfa68d1436d75422fe/68747470733a2f2f63646e2e646973636f72646170702e636f6d2f6174746163686d656e74732f3837303132383439363735383930323835342f313238343733313136303833313835323630342f53637265656e73686f745f32303234303931345f3232323230362e706e673f65783d36366537623261312669733d363665363631323126686d3d6265363462353334623061646138346332636265336564363061656563303339303430663862363866383562356261663639313965303836343935383431613026)
 
 ## Table of Contents
 - [Requirements](#requirements)
@@ -11,6 +11,8 @@ Add git information about your files when working with [oil.nvim](https://github
 - [Recipes](#recipes)
 - [API](#api)
 - [Highlights](#highlights)
+- [Bugs/Issues](#bugs-and-issues)
+- [Contributing](#contributing)
 
 ## Requirements
 - Neovim 0.8+
@@ -19,8 +21,9 @@ Add git information about your files when working with [oil.nvim](https://github
 
 ## Installation
 I have only tested this plugin with lazy.nvim, but I don't see a reason other plugin managers
-wouldn't work.
+wouldn't work. If you run into any issues, please open an issue and I will attempt to resolve it.
 
+### Lazy.nvim
 ```lua
 {
     {
@@ -38,7 +41,7 @@ wouldn't work.
             win_options = {
                 signcolumn = "yes:2",
                 statuscolumn = "",
-            }
+            },
         },
         -- Optional dependencies
         dependencies = { { "echasnovski/mini.icons", opts = {} } },
@@ -48,6 +51,9 @@ wouldn't work.
 ```
 
 ## Options
+These are the default options for this plugin. They can be programmatically accessed through
+`require("oil-git-signs").defaults`; however, this table **should not** be modified.
+
 ```lua
 local ogs = require("oil-git-signs")
 
@@ -146,7 +152,6 @@ local defaults = {
 ## Recipes
 
 ### Navigation Keymaps
-
 <details>
     <summary>
         Examples of some standard keymaps for jumping to changed files within the oil buffer.
@@ -211,7 +216,6 @@ local defaults = {
 </details>
 
 ### Lualine Integration
-
 <details>
     <summary>
         Improved integration with lualine to show git information in your statusline when in an oil buffer.
@@ -297,7 +301,6 @@ The following is an example configuration which makes use of this component.
 </details>
 
 ### Integration with Oil Git Ignore Recipe
-
 <details>
     <summary>
         Fixes issues that occur when hiding files that are ignored by git.
@@ -544,3 +547,28 @@ See [Options](#options).
 | `U`             | `OilChange`   | `OilGitSignsIndexUnmerged`       | `OilGitSignsWorkingTreeUnmerged`       |
 | `?`             | `OilCreate`   | `OilGitSignsIndexUntracked`      | `OilGitSignsWorkingTreeUntracked`      |
 | `!`             | `NonText`     | `OilGitSignsIndexIgnored`        | `OilGitSignsWorkingTreeIgnored`        |
+
+## Bugs and Issues
+If you run into any issues with this plugin please do the following:
+
+##### Ensure you:
+1. Are using the latest commit on the main branch of this plugin and oil.nvim.
+2. Are using a recent version of Git.
+3. Are using a recent version of Neovim.
+4. Have checked for any existing/duplicate issues.
+
+##### Create a New Issue:
+When creating an issue please include the following:
+
+- oil-git-signs.nvim version/commit (check your package manager)
+- oil.nvim version/commit (check your package manager)
+- git version (`git --version`)
+- neovim version (`nvim --version`)
+- a `repro.lua` and any neccessary steps to reproduce the issue (**optional**, see 
+[lazy.nvim repro.lua](https://lazy.folke.io/developers#reprolua))
+
+## Contributing
+If you have any ideas for features or improvements for this plugin feel free to open an issue or
+pull request. I will definitely look at adding it.
+
+
