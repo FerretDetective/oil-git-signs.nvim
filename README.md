@@ -434,7 +434,7 @@ to the count-th occurrence from the last (e.g. -1 to get the last occurrence, -2
 
 By default, this will jump to any status item however you may specify which ones to jump to for both
 the index and the working tree. To do this you pass an array of the statuses you would like to
-include to the statuses table under either the `index` or `working_tree` fields.
+include to the statuses' table under either the `index` or `working_tree` fields.
 
 ##### Type
 ```
@@ -529,7 +529,7 @@ vim.b.oil_git_signs_summary: {
 
 ## Highlights
 These are the default highlight and icons configurations which can all be customized. 
-See [Options](#options)
+See [Options](#options).
 
 | Default Icon    | Default Link  | Index Highlight Group            | Working Tree Highlight Group           |
 | --------------- | ------------- | -------------------------------- | -------------------------------------- |
