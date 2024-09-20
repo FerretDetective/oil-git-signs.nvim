@@ -428,6 +428,15 @@ ogs.GitStatus: enum {
 }
 ```
 
+#### ogs.AllStatuses
+##### Description
+This is an array of all the enum values for each git statuses available.
+
+##### Type
+```
+ogs.AllStatuses: ogs.GitStatus[]
+```
+
 #### ogs.jump_to_status
 ##### Description
 Jump to a numbered count of a given git status on files within oil.
@@ -528,6 +537,17 @@ vim.b.oil_git_signs_summary: {
         modified: integer,
     },
 }
+```
+
+#### vim.b.oil_git_signs_jump_list
+##### Description
+This is a **readonly** array which maps the one indexed line number of each line in an oil buffer to
+the git status of that object. Each line will either give a string of length two where the first
+character is the index status and the second character is the working tree status, or `vim.NIL`.
+
+##### Type
+```
+vim.b.oil_git_signs_jump_list: (string|vim.NIL)[]
 ```
 
 ## Highlights

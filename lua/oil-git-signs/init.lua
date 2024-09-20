@@ -17,6 +17,9 @@ M.GitStatus = {
     -- stylua: ignore end
 }
 
+---@type oil_git_signs.GitStatus[]
+M.AllStatuses = { "m", " ", "M", "T", "A", "D", "R", "C", "U", "?", "!" }
+
 ---@class oil_git_signs.EntryStatus
 ---@field index oil_git_signs.GitStatus
 ---@field working_tree oil_git_signs.GitStatus
@@ -24,6 +27,8 @@ M.GitStatus = {
 ---@class oil_git_signs.StatusSummary
 ---@field index { added: integer, removed: integer, modified: integer }
 ---@field working_tree { added: integer, removed: integer, modified: integer }
+
+---@alias oil_git_signs.JumpList (string|vim.NIL)[]
 
 ---Create a new `StatusSummary` object
 ---@return oil_git_signs.StatusSummary
@@ -136,35 +141,40 @@ end
 ---@param buffer integer
 ---@param namespace integer
 local function update_status_ext_marks(status, buffer, namespace)
-    for line_nr = 1, vim.api.nvim_buf_line_count(buffer) do
-        local entry = require("oil").get_entry_on_line(buffer, line_nr)
+    local jump_list = {}
 
-        if entry ~= nil then
-            local git_status = status[entry.name]
+    for lnum = 1, vim.api.nvim_buf_line_count(buffer) do
+        local entry = assert(require("oil").get_entry_on_line(buffer, lnum))
+        local git_status = status[entry.name]
 
-            if git_status ~= nil then
-                if M.options.show_index(entry.name, git_status.index) then
-                    local index_display = M.options.index[git_status.index]
+        if git_status ~= nil then
+            jump_list[lnum] = git_status.index .. git_status.working_tree
 
-                    vim.api.nvim_buf_set_extmark(buffer, namespace, line_nr - 1, 0, {
-                        sign_text = index_display.icon,
-                        sign_hl_group = index_display.hl_group,
-                        priority = 1,
-                    })
-                end
+            if M.options.show_index(entry.name, git_status.index) then
+                local index_display = M.options.index[git_status.index]
 
-                if M.options.show_working_tree(entry.name, git_status.working_tree) then
-                    local working_tree_display = M.options.working_tree[git_status.working_tree]
-
-                    vim.api.nvim_buf_set_extmark(buffer, namespace, line_nr - 1, 1, {
-                        sign_text = working_tree_display.icon,
-                        sign_hl_group = working_tree_display.hl_group,
-                        priority = 1,
-                    })
-                end
+                vim.api.nvim_buf_set_extmark(buffer, namespace, lnum - 1, 0, {
+                    sign_text = index_display.icon,
+                    sign_hl_group = index_display.hl_group,
+                    priority = 1,
+                })
             end
+
+            if M.options.show_working_tree(entry.name, git_status.working_tree) then
+                local working_tree_display = M.options.working_tree[git_status.working_tree]
+
+                vim.api.nvim_buf_set_extmark(buffer, namespace, lnum - 1, 1, {
+                    sign_text = working_tree_display.icon,
+                    sign_hl_group = working_tree_display.hl_group,
+                    priority = 1,
+                })
+            end
+        else
+            jump_list[lnum] = vim.NIL
         end
     end
+
+    vim.b[buffer].oil_git_signs_jump_list = jump_list
 end
 
 ---Generate an augroup for a given buffer
@@ -202,59 +212,67 @@ function M.jump_to_status(direction, count, statuses)
 
     count = count or 1
     ---@type { index: oil_git_signs.GitStatus[], working_tree: oil_git_signs.GitStatus[] }
-    statuses = statuses or { index = M.GitStatus, working_tree = M.GitStatus }
+    statuses = statuses or { index = M.AllStatuses, working_tree = M.AllStatuses }
 
-    local icons = { ---@type { [0]: string[], [1]: string[] }
-        [0] = vim.tbl_map(function(status)
-            return M.options.index[status].icon
-        end, statuses.index),
-        [1] = vim.tbl_map(function(status)
-            return M.options.working_tree[status].icon
-        end, statuses.working_tree),
-    }
+    -- the strings are used to match against each status as `vim.tbl_contains` is more expensive
+    local index_pattern = "^$"
+    if #statuses.index > 0 then
+        index_pattern = "[" .. table.concat(statuses.index, "") .. "]"
+    end
+
+    local working_tree_pattern = "^$"
+    if #statuses.working_tree > 0 then
+        working_tree_pattern = "[" .. table.concat(statuses.working_tree, "") .. "]"
+    end
 
     local buf = vim.api.nvim_get_current_buf()
     local win = vim.api.nvim_get_current_win()
-    local namespace = buf_get_namespace(buf)
+    local buf_len = vim.api.nvim_buf_line_count(buf)
+    local cursor_row = vim.api.nvim_win_get_cursor(win)[1]
 
-    local extmark_items = vim.api.nvim_buf_get_extmarks(buf, namespace, 0, -1, { details = true })
-
-    if count < 0 then
-        if direction == "down" then
-            extmark_items = vim.fn.reverse(extmark_items)
-        end
-
-        count = math.abs(count)
-    elseif direction == "up" then
-        extmark_items = vim.fn.reverse(extmark_items)
+    local start, stop, step
+    if direction == "down" and count > 0 then
+        -- start at the cursor and move down
+        start = cursor_row + 1
+        stop = buf_len
+        step = 1
+    elseif direction == "down" and count < 0 then
+        -- start at the end and move up (e.g. getting the last status)
+        start = buf_len
+        stop = cursor_row
+        step = -1
+    elseif direction == "up" and count > 0 then
+        -- start at the cursor and move up
+        start = cursor_row - 1
+        stop = 1
+        step = -1
+    else
+        -- start at the top and move down (e.g. getting the first status)
+        start = 1
+        stop = cursor_row
+        step = 1
     end
 
-    local _, cur_cursor_row, _, _ = unpack(vim.fn.getpos("."))
+    -- count must be positive in order to be used to the determine how many statuses we need to visit
+    count = math.abs(count)
 
-    -- since it is possible to dynamically disable our extmarks we can only reliably decrement
-    -- the count based on what row we are on instead of going based off of the iterations
-    local last_row = nil
+    local jump_list = assert(vim.b[buf].oil_git_signs_jump_list) ---@type oil_git_signs.JumpList
 
-    for _, extmark_item in ipairs(extmark_items) do
-        ---@diagnostic disable-next-line: assign-type-mismatch
-        local _ = extmark_items[1] ---@type integer extmark_id
-        local row = extmark_item[2] + 1 ---@type integer row (zero indexed)
-        ---@diagnostic disable-next-line: assign-type-mismatch
-        local col = extmark_item[3] ---@type integer col
-        local details = assert(extmark_item[4]) ---@type vim.api.keyset.extmark_details
-        local sign_text = assert(details.sign_text)
+    for lnum = start, stop, step do
+        local line_status = jump_list[lnum]
 
-        if
-            (direction == "up" and row < cur_cursor_row)
-            or (direction == "down" and row > cur_cursor_row)
-        then
-            if vim.tbl_contains(icons[col], sign_text:sub(1, 1)) and row ~= last_row then
-                last_row = row
+        if line_status ~= vim.NIL then
+            if
+                ---@diagnostic disable-next-line: param-type-mismatch
+                line_status:sub(1, 1):match(index_pattern)
+                ---@diagnostic disable-next-line: param-type-mismatch
+                or line_status:sub(2, 2):match(working_tree_pattern)
+            then
                 count = count - 1
             end
 
             if count == 0 then
-                vim.api.nvim_win_set_cursor(win, { row, 1 })
+                vim.api.nvim_win_set_cursor(win, { lnum, 0 })
                 return
             end
         end
@@ -447,9 +465,16 @@ function M.setup(opts)
                 pattern = "OilEnter",
                 desc = "update git status & extmarks on first load and refresh of oil buf",
                 group = augroup,
-                callback = vim.schedule_wrap(function()
+                ---@param e oil_git_signs.AutoCmdEvent
+                callback = vim.schedule_wrap(function(e)
+                    -- don't refresh non-ogs bufs
+                    if not vim.b[e.buf].oil_git_signs_exists then
+                        return
+                    end
+
                     current_status, current_summary = query_git_status(path)
                     vim.b[evt.buf].oil_git_signs_summary = current_summary
+                    vim.b[evt.buf].oil_git_signs_jump_list = {}
 
                     update_status_ext_marks(current_status, evt.buf, namespace)
                 end),
@@ -458,9 +483,16 @@ function M.setup(opts)
                 pattern = "OilMutationComplete",
                 desc = "update git status & extmarks when oil mutates the fs",
                 group = augroup,
-                callback = vim.schedule_wrap(function()
+                ---@param e oil_git_signs.AutoCmdEvent
+                callback = vim.schedule_wrap(function(e)
+                    -- don't refresh non-ogs bufs
+                    if not vim.b[e.buf].oil_git_signs_exists then
+                        return
+                    end
+
                     current_status, current_summary = query_git_status(path)
                     vim.b[evt.buf].oil_git_signs_summary = current_summary
+                    vim.b[evt.buf].oil_git_signs_jump_list = {}
 
                     update_status_ext_marks(current_status, evt.buf, namespace)
                 end),
@@ -472,8 +504,15 @@ function M.setup(opts)
                 pattern = "OilActionsPre",
                 desc = "clear extmarks before any oil actions occur",
                 group = augroup,
-                callback = vim.schedule_wrap(function()
+                ---@param e oil_git_signs.AutoCmdEvent
+                callback = vim.schedule_wrap(function(e)
+                    -- don't refresh non-ogs bufs
+                    if not vim.b[e.buf].oil_git_signs_exists then
+                        return
+                    end
+
                     vim.api.nvim_buf_clear_namespace(evt.buf, namespace, 0, -1)
+                    vim.b[evt.buf].oil_git_signs_jump_list = {}
                 end),
             })
 
