@@ -6,6 +6,7 @@ Add git information about your files when working with [oil.nvim](https://github
 
 ## Table of Contents
 - [Requirements](#requirements)
+- [Features](#features)
 - [Installation](#installation)
 - [Options](#options)
 - [Recipes](#recipes)
@@ -13,6 +14,13 @@ Add git information about your files when working with [oil.nvim](https://github
 - [Highlights](#highlights)
 - [Bugs/Issues](#bugs-and-issues)
 - [Contributing](#contributing)
+
+## Features
+- Display the git status of your files in oil.nvim as if you had run `git status --short`.
+- Fine control over what highlights and icons to use for each type of status.
+- Show status summaries on your statusline with [lualine.nvim](https://github.com/nvim-lualine/lualine.nvim) integration.
+- Create keymaps to jump straight to files with a certain type of status.
+- Very low impact on performance due to asynchronous processing.
 
 ## Requirements
 - Neovim 0.8+
