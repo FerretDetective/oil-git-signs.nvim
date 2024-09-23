@@ -154,6 +154,7 @@ local function update_status_ext_marks(status, buffer, namespace)
                 local index_display = M.options.index[git_status.index]
 
                 vim.api.nvim_buf_set_extmark(buffer, namespace, lnum - 1, 0, {
+                    invalidate = true,
                     sign_text = index_display.icon,
                     sign_hl_group = index_display.hl_group,
                     priority = 1,
@@ -164,6 +165,7 @@ local function update_status_ext_marks(status, buffer, namespace)
                 local working_tree_display = M.options.working_tree[git_status.working_tree]
 
                 vim.api.nvim_buf_set_extmark(buffer, namespace, lnum - 1, 1, {
+                    invalidate = true,
                     sign_text = working_tree_display.icon,
                     sign_hl_group = working_tree_display.hl_group,
                     priority = 1,
