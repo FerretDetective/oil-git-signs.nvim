@@ -30,6 +30,35 @@ M.AllStatuses = { "m", " ", "M", "T", "A", "D", "R", "C", "U", "?", "!" }
 
 ---@alias oil_git_signs.JumpList (string|vim.NIL)[]
 
+---Create a wrapper for a function which ensures that function is called at most every `time_ms` millis
+---@param fn fun(...: any)
+---@param time_ms integer
+---@return fun(...: any)
+local function apply_debounce(fn, time_ms)
+    local debounce = assert(vim.uv.new_timer())
+    local has_pending = false
+
+    return function(...)
+        local args = { ... }
+        if not debounce:is_active() then
+            fn(unpack(args))
+        else
+            has_pending = true
+        end
+
+        assert(debounce:start(
+            time_ms,
+            0,
+            vim.schedule_wrap(function()
+                if has_pending then
+                    fn(unpack(args))
+                    has_pending = false
+                end
+            end)
+        ))
+    end
+end
+
 ---Create a new `StatusSummary` object
 ---@return oil_git_signs.StatusSummary
 local function new_summary()
@@ -462,42 +491,43 @@ function M.setup(opts)
             local namespace = buf_get_namespace(evt.buf)
             local augroup = buf_get_augroup(evt.buf)
 
+            ---@type fun(start: integer, stop: integer)
+            local clear_extmarks = apply_debounce(function(start, stop)
+                vim.api.nvim_buf_clear_namespace(evt.buf, namespace, start, stop)
+            end, 250)
+
+            ---@type fun(e: oil_git_signs.AutoCmdEvent)
+            local updater = apply_debounce(function(e)
+                -- don't refresh non-ogs bufs
+                if not vim.b[e.buf].oil_git_signs_exists then
+                    return
+                end
+
+                -- HACK: ?
+                -- For a reason currently unknown to me, when reloading the buffer the namespaced
+                -- extmarks would continue grow without bound. So this call ensures that there are
+                -- only extmarks within the bounds of the buffer
+                clear_extmarks(vim.api.nvim_buf_line_count(evt.buf), -1)
+
+                current_status, current_summary = query_git_status(path)
+
+                vim.b[evt.buf].oil_git_signs_summary = current_summary
+                vim.b[evt.buf].oil_git_signs_jump_list = {}
+                update_status_ext_marks(current_status, evt.buf, namespace)
+            end, 100)
+
             -- only update git status & ext_marks after oil has finished mutation or it has entered/reloaded
             vim.api.nvim_create_autocmd("User", {
                 pattern = "OilEnter",
                 desc = "update git status & extmarks on first load and refresh of oil buf",
                 group = augroup,
-                ---@param e oil_git_signs.AutoCmdEvent
-                callback = vim.schedule_wrap(function(e)
-                    -- don't refresh non-ogs bufs
-                    if not vim.b[e.buf].oil_git_signs_exists then
-                        return
-                    end
-
-                    current_status, current_summary = query_git_status(path)
-                    vim.b[evt.buf].oil_git_signs_summary = current_summary
-                    vim.b[evt.buf].oil_git_signs_jump_list = {}
-
-                    update_status_ext_marks(current_status, evt.buf, namespace)
-                end),
+                callback = updater,
             })
             vim.api.nvim_create_autocmd("User", {
                 pattern = "OilMutationComplete",
                 desc = "update git status & extmarks when oil mutates the fs",
                 group = augroup,
-                ---@param e oil_git_signs.AutoCmdEvent
-                callback = vim.schedule_wrap(function(e)
-                    -- don't refresh non-ogs bufs
-                    if not vim.b[e.buf].oil_git_signs_exists then
-                        return
-                    end
-
-                    current_status, current_summary = query_git_status(path)
-                    vim.b[evt.buf].oil_git_signs_summary = current_summary
-                    vim.b[evt.buf].oil_git_signs_jump_list = {}
-
-                    update_status_ext_marks(current_status, evt.buf, namespace)
-                end),
+                callback = updater,
             })
 
             -- makes sure that the extmarks are cleared to prevent OOB cursor jumps and
@@ -513,7 +543,6 @@ function M.setup(opts)
                         return
                     end
 
-                    vim.api.nvim_buf_clear_namespace(evt.buf, namespace, 0, -1)
                     vim.b[evt.buf].oil_git_signs_jump_list = {}
                 end),
             })
