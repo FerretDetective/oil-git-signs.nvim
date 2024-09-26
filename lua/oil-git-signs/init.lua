@@ -35,7 +35,7 @@ M.AllStatuses = { "m", " ", "M", "T", "A", "D", "R", "C", "U", "?", "!" }
 ---@param time_ms integer
 ---@return fun(...: any)
 local function apply_debounce(fn, time_ms)
-    local debounce = assert(vim.uv.new_timer())
+    local debounce = assert(vim.uv.new_timer(), "failed to create debounce timer")
     local has_pending = false
 
     return function(...)
@@ -46,7 +46,7 @@ local function apply_debounce(fn, time_ms)
             has_pending = true
         end
 
-        assert(debounce:start(
+        debounce:start(
             time_ms,
             0,
             vim.schedule_wrap(function()
@@ -55,7 +55,7 @@ local function apply_debounce(fn, time_ms)
                     has_pending = false
                 end
             end)
-        ))
+        )
     end
 end
 
@@ -85,10 +85,13 @@ local function parse_git_status(raw_status)
     end
 
     -- extract the filename/path
-    local path = assert(raw_status:match(pattern)) ---@type string
+    local path = assert(raw_status:match(pattern), "failed to match git status") ---@type string
 
     -- extract the first part of the path (up to first sep)
-    local entry = assert(path:match(("^([^%s]+)"):format(require("oil.fs").sep))) ---@type string
+    local entry = assert( ---@type string
+        path:match(("^([^%s]+)"):format(require("oil.fs").sep)),
+        "failed to extract entry path"
+    )
 
     return entry, index, working_tree
 end
@@ -98,8 +101,11 @@ end
 ---@return table<string, oil_git_signs.EntryStatus?>
 ---@return oil_git_signs.StatusSummary
 local function query_git_status(path)
+    local statuses = {} ---@type table<string, oil_git_signs.EntryStatus?>
+    local summary = new_summary()
+
     if vim.fn.isdirectory(path) == 0 then
-        return {}, new_summary()
+        return statuses, summary
     end
 
     -- could use `--porcelain` here for guaranteed compatibility, but parsing it is more diffciult
@@ -113,10 +119,11 @@ local function query_git_status(path)
     table.insert(cmd, ".")
 
     local task = vim.system(cmd, { text = true, cwd = path })
-    local stdout = assert(task:wait().stdout)
+    local stdout = task:wait().stdout
 
-    local statuses = {} ---@type table<string, oil_git_signs.EntryStatus?>
-    local summary = new_summary()
+    if stdout == nil then
+        return statuses, summary
+    end
 
     for line in vim.gsplit(stdout, "\n") do
         if line ~= "" then
@@ -173,7 +180,11 @@ local function update_status_ext_marks(status, buffer, namespace)
     local jump_list = {}
 
     for lnum = 1, vim.api.nvim_buf_line_count(buffer) do
-        local entry = assert(require("oil").get_entry_on_line(buffer, lnum))
+        local entry = require("oil").get_entry_on_line(buffer, lnum)
+        if entry == nil then
+            return
+        end
+
         local git_status = status[entry.name]
 
         if git_status ~= nil then
@@ -287,7 +298,10 @@ function M.jump_to_status(direction, count, statuses)
     -- count must be positive in order to be used to the determine how many statuses we need to visit
     count = math.abs(count)
 
-    local jump_list = assert(vim.b[buf].oil_git_signs_jump_list) ---@type oil_git_signs.JumpList
+    local jump_list = assert( ---@type oil_git_signs.JumpList
+        vim.b[buf].oil_git_signs_jump_list,
+        "buffer is missing git signs jump list"
+    )
 
     for lnum = start, stop, step do
         local line_status = jump_list[lnum]
