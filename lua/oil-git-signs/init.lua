@@ -77,11 +77,11 @@ local function parse_git_status(raw_status)
     local index = raw_status:sub(1, 1) ---@type oil_git_signs.GitStatus
     local working_tree = raw_status:sub(2, 2) ---@type oil_git_signs.GitStatus
 
-    local pattern = "^[" .. index .. "][" .. working_tree .. "] "
+    local pattern
     if index == M.GitStatus.RENAMED or working_tree == M.GitStatus.RENAMED then
-        pattern = pattern .. '"?.+"? -> ?(.+)"?$'
+        pattern = '.. "?.+"? -> ?(.+)"?$'
     else
-        pattern = pattern .. '"?(.+)"?$'
+        pattern = '.. "?(.+)"?$'
     end
 
     -- extract the filename/path
