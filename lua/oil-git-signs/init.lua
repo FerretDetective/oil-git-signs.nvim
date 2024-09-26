@@ -299,33 +299,32 @@ function M.jump_to_status(direction, count, statuses)
 
     -- count must be positive in order to be used to the determine how many statuses we need to visit
     count = math.abs(count)
+    ---@type oil_git_signs.JumpList?
+    local jump_list = vim.b[buf].oil_git_signs_jump_list
 
-    local jump_list = assert( ---@type oil_git_signs.JumpList
-        vim.b[buf].oil_git_signs_jump_list,
-        "buffer is missing git signs jump list"
-    )
+    if jump_list ~= nil and #jump_list == buf_len then
+        for lnum = start, stop, step do
+            local line_status = jump_list[lnum]
 
-    for lnum = start, stop, step do
-        local line_status = jump_list[lnum]
+            if line_status ~= vim.NIL then
+                if
+                    ---@diagnostic disable-next-line: param-type-mismatch
+                    line_status:sub(1, 1):match(index_pattern)
+                    ---@diagnostic disable-next-line: param-type-mismatch
+                    or line_status:sub(2, 2):match(working_tree_pattern)
+                then
+                    count = count - 1
+                end
 
-        if line_status ~= vim.NIL then
-            if
-                ---@diagnostic disable-next-line: param-type-mismatch
-                line_status:sub(1, 1):match(index_pattern)
-                ---@diagnostic disable-next-line: param-type-mismatch
-                or line_status:sub(2, 2):match(working_tree_pattern)
-            then
-                count = count - 1
-            end
-
-            if count == 0 then
-                vim.api.nvim_win_set_cursor(win, { lnum, 0 })
-                return
+                if count == 0 then
+                    vim.api.nvim_win_set_cursor(win, { lnum, 0 })
+                    return
+                end
             end
         end
     end
 
-    vim.notify("OilGitSigns: no status to move to", vim.log.levels.WARN)
+    vim.notify("OilGitSigns: no status valid to move to", vim.log.levels.WARN)
 end
 
 ---Create the global default highlights
