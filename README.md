@@ -23,7 +23,7 @@ Add git information about your files when working with [oil.nvim](https://github
 - Very low impact on performance due to asynchronous processing.
 
 ## Requirements
-- Neovim 0.8+
+- Neovim 0.10+
 - oil.nvim
 - Git
 
