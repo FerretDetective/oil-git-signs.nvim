@@ -174,12 +174,14 @@ end
 
 ---Create/update the status ext_marks for the current buffer
 ---@param status table<string, oil_git_signs.EntryStatus?>
----@param buffer integer
----@param namespace integer
-local function update_status_ext_marks(status, buffer, namespace)
+---@param buffer integer buffer number
+---@param namespace integer namespace id
+---@param start integer 1 indexed start row
+---@param stop integer 1 indexed stop row
+local function update_status_ext_marks(status, buffer, namespace, start, stop)
     local jump_list = {}
 
-    for lnum = 1, vim.api.nvim_buf_line_count(buffer) do
+    for lnum = start, stop do
         local entry = require("oil").get_entry_on_line(buffer, lnum)
         if entry == nil then
             return
@@ -522,17 +524,19 @@ function M.setup(opts)
                     return
                 end
 
+                local buf_len = vim.api.nvim_buf_line_count(evt.buf)
+
                 -- HACK: ?
                 -- For a reason currently unknown to me, when reloading the buffer the namespaced
                 -- extmarks would continue grow without bound. So this call ensures that there are
                 -- only extmarks within the bounds of the buffer
-                clear_extmarks(vim.api.nvim_buf_line_count(evt.buf), -1)
+                clear_extmarks(buf_len, -1)
 
                 current_status, current_summary = query_git_status(path)
 
                 vim.b[evt.buf].oil_git_signs_summary = current_summary
                 vim.b[evt.buf].oil_git_signs_jump_list = {}
-                update_status_ext_marks(current_status, evt.buf, namespace)
+                update_status_ext_marks(current_status, evt.buf, namespace, 1, buf_len)
             end, 100)
 
             -- only update git status & ext_marks after oil has finished mutation or it has entered/reloaded
