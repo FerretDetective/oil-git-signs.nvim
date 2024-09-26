@@ -462,12 +462,12 @@ M.options = nil
 
 ---@param opts oil_git_signs.Config?
 function M.setup(opts)
-    if not vim.fn.executable("git") then
+    if vim.fn.executable("git") == 0 then
         vim.notify("OilGitSigns: no executable git detected", vim.log.levels.ERROR)
         return
     end
 
-    if not vim.fn.has("nvim-0.10") == 0 then
+    if vim.fn.has("nvim-0.10") == 0 then
         vim.notify("OilGitSigns: minimum required neovim version is 0.10.0", vim.log.levels.ERROR)
         return
     end
