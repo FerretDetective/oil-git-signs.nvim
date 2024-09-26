@@ -452,6 +452,11 @@ function M.setup(opts)
         return
     end
 
+    if not vim.fn.has("nvim-0.10") == 0 then
+        vim.notify("OilGitSigns: minimum required neovim version is 0.10.0", vim.log.levels.ERROR)
+        return
+    end
+
     M.options = vim.tbl_deep_extend("force", M.defaults, opts or {})
 
     vim.schedule(create_highlight_groups)
