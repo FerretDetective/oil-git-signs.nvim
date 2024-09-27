@@ -534,7 +534,6 @@ function M.setup(opts)
                 current_status, current_summary = query_git_status(path)
 
                 vim.b[evt.buf].oil_git_signs_summary = current_summary
-                vim.b[evt.buf].oil_git_signs_jump_list = {}
                 update_status_ext_marks(current_status, evt.buf, namespace, 1, buf_len)
             end, 100)
 
@@ -550,23 +549,6 @@ function M.setup(opts)
                 desc = "update git status & extmarks when oil mutates the fs",
                 group = augroup,
                 callback = updater,
-            })
-
-            -- makes sure that the extmarks are cleared to prevent OOB cursor jumps and
-            -- helps performance by moving the slow clearing operation to unused time
-            vim.api.nvim_create_autocmd("User", {
-                pattern = "OilActionsPre",
-                desc = "clear extmarks before any oil actions occur",
-                group = augroup,
-                ---@param e oil_git_signs.AutoCmdEvent
-                callback = vim.schedule_wrap(function(e)
-                    -- don't refresh non-ogs bufs
-                    if not vim.b[e.buf].oil_git_signs_exists then
-                        return
-                    end
-
-                    vim.b[evt.buf].oil_git_signs_jump_list = {}
-                end),
             })
 
             -- make sure to clean up auto commands when oil deletes the buffer
