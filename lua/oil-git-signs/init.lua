@@ -89,7 +89,7 @@ local function parse_git_status(raw_status)
 
     -- extract the first part of the path (up to first sep)
     local entry = assert( ---@type string
-        path:match(("^([^%s]+)"):format(require("oil.fs").sep)),
+        path:match(("^([^%s]+)"):format("/")),
         "failed to extract entry path"
     )
 
