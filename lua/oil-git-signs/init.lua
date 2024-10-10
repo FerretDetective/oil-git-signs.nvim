@@ -88,10 +88,7 @@ local function parse_git_status(raw_status)
     local path = assert(raw_status:match(pattern), "failed to match git status") ---@type string
 
     -- extract the first part of the path (up to first sep)
-    local entry = assert( ---@type string
-        path:match(("^([^%s]+)"):format("/")),
-        "failed to extract entry path"
-    )
+    local entry = assert(path:match("^([^/]+)"), "failed to extract entry path") ---@type string
 
     return entry, index, working_tree
 end
