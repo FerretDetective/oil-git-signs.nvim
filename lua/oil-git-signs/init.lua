@@ -84,11 +84,11 @@ local function parse_git_status(raw_status)
         pattern = '^.. "?(.-)"?$'
     end
 
-    -- extract the filename/path
-    local path = assert(raw_status:match(pattern), "failed to match git status") ---@type string
+    -- extract the file path from the status
+    local path = assert(raw_status:match(pattern), "failed to extract path from status") ---@type string
 
-    -- extract the first part of the path (up to first sep)
-    local entry = assert(path:match("^([^/]+)"), "failed to extract entry path") ---@type string
+    -- extract the oil entry by taking everything up to first seperator
+    local entry = assert(path:match("^([^/]+)"), "failed to extract entry from path") ---@type string
 
     return entry, index, working_tree
 end
