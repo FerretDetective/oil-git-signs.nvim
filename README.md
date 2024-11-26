@@ -490,6 +490,30 @@ ogs.jump_to_status: function(
 )
 ```
 
+#### ogs.stage_selected
+##### Description
+Stage selected files within the oil buffer.
+
+In normal mode the selected file is the file under the cursor, while in visual mode the visually
+selected files are used.
+
+##### Type
+```
+ogs.stage_selected: function()
+```
+
+#### ogs.unstage_selected
+##### Description
+Unstage selected files within the oil buffer.
+
+In normal mode the selected file is the file under the cursor, while in visual mode the visually
+selected files are used.
+
+##### Type
+```
+ogs.unstage_selected: function()
+```
+
 #### ogs.defaults
 ##### Description
 This is a **readonly** table that contains the default configuration options for this plugin.
