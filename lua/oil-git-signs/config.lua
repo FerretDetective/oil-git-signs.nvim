@@ -25,7 +25,7 @@ M.defaults = {
     ---@type boolean|fun(paths: string[]): boolean
     confirm_git_operations = true,
     -- don't show a confirm message for simple git operations
-    -- by default a simple git operation is definied as one of the following:
+    -- by default a simple git operation is defined as one of the following:
     --     - no more than 5 git stages
     --     - no more than 5 git unstages
     skip_confirm_for_simple_git_operations = false,
