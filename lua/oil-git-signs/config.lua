@@ -28,9 +28,11 @@ M.defaults = {
     -- by default a simple git operation is defined as one of the following:
     --     - no more than 5 git stages
     --     - no more than 5 git unstages
+    ---@type boolean
     skip_confirm_for_simple_git_operations = false,
     -- used to define what the max number of git operations will be considered simple
     -- note that is this only relevant when `skip_confirm_for_simple_git_operations` is enabled
+    ---@type table<{ max_stages: integer, max_unstages: integer }>
     simple_git_operations = {
         max_stages = 5,
         max_unstages = 5,
