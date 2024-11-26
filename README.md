@@ -524,6 +524,9 @@ See [Options](#options) for more details.
 ##### Type
 ```
 ogs.Config: {
+    confirm_git_operations: boolean | function(paths: string[]): boolean,
+    skip_confirm_for_simple_git_operations: boolean,
+    simple_git_operations: table<{ max_stages: integer, max_unstages: integer }>,
     show_index: function(entry_name: string, index_status: ogs.GitStatus): boolean,
     show_working_tree: function(entry_name: string, index_status: ogs.GitStatus): boolean,
     show_ignored: function(oil_dir: string): boolean,
@@ -542,6 +545,9 @@ This is the table that contains the current user configuration for this plugin.
 ##### Type
 ```
 ogs.Config: {
+    confirm_git_operations: boolean | function(paths: string[]): boolean,
+    skip_confirm_for_simple_git_operations: boolean,
+    simple_git_operations: table<{ max_stages: integer, max_unstages: integer }>,
     show_index: function(entry_name: string, index_status: ogs.GitStatus): boolean,
     show_working_tree: function(entry_name: string, index_status: ogs.GitStatus): boolean,
     show_ignored: function(oil_dir: string): boolean,
