@@ -17,9 +17,10 @@ Add git information about your files when working with [oil.nvim](https://github
 
 ## Features
 - Display the git status of your files in oil.nvim as if you had run `git status --short`.
+- Create keymaps to jump straight to files with a certain type of status.
+- Stage and unstage files and directories within the oil buffer.
 - Fine control over what highlights and icons to use for each type of status.
 - Show status summaries on your statusline with [lualine.nvim](https://github.com/nvim-lualine/lualine.nvim) integration.
-- Create keymaps to jump straight to files with a certain type of status.
 - Very low impact on performance due to asynchronous processing.
 
 ## Requirements
