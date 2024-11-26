@@ -65,8 +65,23 @@ These are the default options for this plugin. They can be programmatically acce
 
 ```lua
 local ogs = require("oil-git-signs")
+local GitStatus = ogs.GitStatus
 
 local defaults = {
+    -- show a confirm message when performing any git operations
+    ---@type boolean|fun(paths: string[]): boolean
+    confirm_git_operations = true,
+    -- don't show a confirm message for simple git operations
+    -- by default a simple git operation is defined as one of the following:
+    --     - no more than 5 git stages
+    --     - no more than 5 git unstages
+    skip_confirm_for_simple_git_operations = false,
+    -- used to define what the max number of git operations will be considered simple
+    -- note that is this only relevant when `skip_confirm_for_simple_git_operations` is enabled
+    simple_git_operations = {
+        max_stages = 5,
+        max_unstages = 5,
+    },
     -- used to control whether statuses for the index should be displayed on a per entry basis
     ---@type fun(entry_name: string, index_status: oil_git_signs.GitStatus): boolean
     show_index = function()
@@ -86,34 +101,34 @@ local defaults = {
     ---@type table<oil_git_signs.GitStatus, oil_git_signs.DisplayOption>
     index = {
         -- stylua: ignore start
-        [ogs.GitStatus.SUB_MOD_MODIFIED] = { icon = "m", hl_group = "OilGitSignsIndexSubModModified" },
-        [ogs.GitStatus.MODIFIED]         = { icon = "M", hl_group = "OilGitSignsIndexModified"       },
-        [ogs.GitStatus.UNMODIFIED]       = { icon = " ", hl_group = "OilGitSignsIndexUnmodified"     },
-        [ogs.GitStatus.TYPE_CHANGED]     = { icon = "T", hl_group = "OilGitSignsIndexTypeChanged"    },
-        [ogs.GitStatus.ADDED]            = { icon = "A", hl_group = "OilGitSignsIndexAdded"          },
-        [ogs.GitStatus.DELETED]          = { icon = "D", hl_group = "OilGitSignsIndexDeleted"        },
-        [ogs.GitStatus.RENAMED]          = { icon = "R", hl_group = "OilGitSignsIndexRenamed"        },
-        [ogs.GitStatus.COPIED]           = { icon = "C", hl_group = "OilGitSignsIndexCopied"         },
-        [ogs.GitStatus.UNMERGED]         = { icon = "U", hl_group = "OilGitSignsIndexUnmerged"       },
-        [ogs.GitStatus.UNTRACKED]        = { icon = "?", hl_group = "OilGitSignsIndexUntracked"      },
-        [ogs.GitStatus.IGNORED]          = { icon = "!", hl_group = "OilGitSignsIndexIgnored"        },
+        [GitStatus.SUB_MOD_MODIFIED] = { icon = "m", hl_group = "OilGitSignsIndexSubModModified" },
+        [GitStatus.MODIFIED]         = { icon = "M", hl_group = "OilGitSignsIndexModified"       },
+        [GitStatus.UNMODIFIED]       = { icon = " ", hl_group = "OilGitSignsIndexUnmodified"     },
+        [GitStatus.TYPE_CHANGED]     = { icon = "T", hl_group = "OilGitSignsIndexTypeChanged"    },
+        [GitStatus.ADDED]            = { icon = "A", hl_group = "OilGitSignsIndexAdded"          },
+        [GitStatus.DELETED]          = { icon = "D", hl_group = "OilGitSignsIndexDeleted"        },
+        [GitStatus.RENAMED]          = { icon = "R", hl_group = "OilGitSignsIndexRenamed"        },
+        [GitStatus.COPIED]           = { icon = "C", hl_group = "OilGitSignsIndexCopied"         },
+        [GitStatus.UNMERGED]         = { icon = "U", hl_group = "OilGitSignsIndexUnmerged"       },
+        [GitStatus.UNTRACKED]        = { icon = "?", hl_group = "OilGitSignsIndexUntracked"      },
+        [GitStatus.IGNORED]          = { icon = "!", hl_group = "OilGitSignsIndexIgnored"        },
         -- stylua: ignore end
     },
     -- used to customize how ext marks are displayed for statuses in the working tree
     ---@type table<oil_git_signs.GitStatus, oil_git_signs.DisplayOption>
     working_tree = {
         -- stylua: ignore start
-        [ogs.GitStatus.SUB_MOD_MODIFIED] = { icon = "m", hl_group = "OilGitSignsWorkingTreeSubModModified" },
-        [ogs.GitStatus.MODIFIED]         = { icon = "M", hl_group = "OilGitSignsWorkingTreeModified"       },
-        [ogs.GitStatus.UNMODIFIED]       = { icon = " ", hl_group = "OilGitSignsWorkingTreeUnmodified"     },
-        [ogs.GitStatus.TYPE_CHANGED]     = { icon = "T", hl_group = "OilGitSignsWorkingTreeTypeChanged"    },
-        [ogs.GitStatus.ADDED]            = { icon = "A", hl_group = "OilGitSignsWorkingTreeAdded"          },
-        [ogs.GitStatus.DELETED]          = { icon = "D", hl_group = "OilGitSignsWorkingTreeDeleted"        },
-        [ogs.GitStatus.RENAMED]          = { icon = "R", hl_group = "OilGitSignsWorkingTreeRenamed"        },
-        [ogs.GitStatus.COPIED]           = { icon = "C", hl_group = "OilGitSignsWorkingTreeCopied"         },
-        [ogs.GitStatus.UNMERGED]         = { icon = "U", hl_group = "OilGitSignsWorkingTreeUnmerged"       },
-        [ogs.GitStatus.UNTRACKED]        = { icon = "?", hl_group = "OilGitSignsWorkingTreeUntracked"      },
-        [ogs.GitStatus.IGNORED]          = { icon = "!", hl_group = "OilGitSignsWorkingTreeIgnored"        },
+        [GitStatus.SUB_MOD_MODIFIED] = { icon = "m", hl_group = "OilGitSignsWorkingTreeSubModModified" },
+        [GitStatus.MODIFIED]         = { icon = "M", hl_group = "OilGitSignsWorkingTreeModified"       },
+        [GitStatus.UNMODIFIED]       = { icon = " ", hl_group = "OilGitSignsWorkingTreeUnmodified"     },
+        [GitStatus.TYPE_CHANGED]     = { icon = "T", hl_group = "OilGitSignsWorkingTreeTypeChanged"    },
+        [GitStatus.ADDED]            = { icon = "A", hl_group = "OilGitSignsWorkingTreeAdded"          },
+        [GitStatus.DELETED]          = { icon = "D", hl_group = "OilGitSignsWorkingTreeDeleted"        },
+        [GitStatus.RENAMED]          = { icon = "R", hl_group = "OilGitSignsWorkingTreeRenamed"        },
+        [GitStatus.COPIED]           = { icon = "C", hl_group = "OilGitSignsWorkingTreeCopied"         },
+        [GitStatus.UNMERGED]         = { icon = "U", hl_group = "OilGitSignsWorkingTreeUnmerged"       },
+        [GitStatus.UNTRACKED]        = { icon = "?", hl_group = "OilGitSignsWorkingTreeUntracked"      },
+        [GitStatus.IGNORED]          = { icon = "!", hl_group = "OilGitSignsWorkingTreeIgnored"        },
         -- stylua: ignore end
     },
     -- used to determine the most important status to display in the case where a subdir has
@@ -121,34 +136,34 @@ local defaults = {
     ---@type table<oil_git_signs.GitStatus, integer>
     status_priority = {
         -- stylua: ignore start
-        [ogs.GitStatus.UNMERGED]         = 10,
-        [ogs.GitStatus.MODIFIED]         = 9,
-        [ogs.GitStatus.SUB_MOD_MODIFIED] = 8,
-        [ogs.GitStatus.ADDED]            = 7,
-        [ogs.GitStatus.DELETED]          = 6,
-        [ogs.GitStatus.RENAMED]          = 5,
-        [ogs.GitStatus.COPIED]           = 4,
-        [ogs.GitStatus.TYPE_CHANGED]     = 3,
-        [ogs.GitStatus.UNTRACKED]        = 2,
-        [ogs.GitStatus.IGNORED]          = 1,
-        [ogs.GitStatus.UNMODIFIED]       = 0,
+        [GitStatus.UNMERGED]         = 10,
+        [GitStatus.MODIFIED]         = 9,
+        [GitStatus.SUB_MOD_MODIFIED] = 8,
+        [GitStatus.ADDED]            = 7,
+        [GitStatus.DELETED]          = 6,
+        [GitStatus.RENAMED]          = 5,
+        [GitStatus.COPIED]           = 4,
+        [GitStatus.TYPE_CHANGED]     = 3,
+        [GitStatus.UNTRACKED]        = 2,
+        [GitStatus.IGNORED]          = 1,
+        [GitStatus.UNMODIFIED]       = 0,
         -- stylua: ignore end
     },
     -- used when creating the summary to determine how to count each status type
     ---@type table<oil_git_signs.GitStatus, "added"|"removed"|"modified"|nil>
     status_classification = {
         -- stylua: ignore start
-        [ogs.GitStatus.SUB_MOD_MODIFIED] = "modified",
-        [ogs.GitStatus.UNMERGED]         = "modified",
-        [ogs.GitStatus.MODIFIED]         = "modified",
-        [ogs.GitStatus.ADDED]            = "added",
-        [ogs.GitStatus.DELETED]          = "removed",
-        [ogs.GitStatus.RENAMED]          = "modified",
-        [ogs.GitStatus.COPIED]           = "added",
-        [ogs.GitStatus.TYPE_CHANGED]     = "modified",
-        [ogs.GitStatus.UNTRACKED]        = "added",
-        [ogs.GitStatus.UNMODIFIED]       = nil,
-        [ogs.GitStatus.IGNORED]          = nil,
+        [GitStatus.SUB_MOD_MODIFIED] = "modified",
+        [GitStatus.UNMERGED]         = "modified",
+        [GitStatus.MODIFIED]         = "modified",
+        [GitStatus.ADDED]            = "added",
+        [GitStatus.DELETED]          = "removed",
+        [GitStatus.RENAMED]          = "modified",
+        [GitStatus.COPIED]           = "added",
+        [GitStatus.TYPE_CHANGED]     = "modified",
+        [GitStatus.UNTRACKED]        = "added",
+        [GitStatus.UNMODIFIED]       = nil,
+        [GitStatus.IGNORED]          = nil,
         -- stylua: ignore end
     },
     -- used to create buffer local keymaps when oil-git-signs attaches to a buffer
