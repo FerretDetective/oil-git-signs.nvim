@@ -180,7 +180,7 @@ local defaults = {
 ### Navigation Keymaps
 <details>
     <summary>
-        Examples of some standard keymaps for jumping to changed files within the oil buffer.
+        Examples of some standard keymaps for jumping to changed files, and (un)staging files within the oil buffer.
     </summary>
 
 ```lua
@@ -194,9 +194,6 @@ local defaults = {
                 "n",
                 "[H",
                 function()
-                    if not vim.b.oil_git_signs_exists then
-                        return
-                    end
                     require("oil-git-signs").jump_to_status("up", -vim.v.count1)
                 end,
                 { desc = "Jump to first git status" },
@@ -205,9 +202,6 @@ local defaults = {
                 "n",
                 "]H",
                 function()
-                    if not vim.b.oil_git_signs_exists then
-                        return
-                    end
                     require("oil-git-signs").jump_to_status("down", -vim.v.count1)
                 end,
                 { desc = "Jump to last git status" },
@@ -216,9 +210,6 @@ local defaults = {
                 "n",
                 "[h",
                 function()
-                    if not vim.b.oil_git_signs_exists then
-                        return
-                    end
                     require("oil-git-signs").jump_to_status("up", vim.v.count1)
                 end,
                 { desc = "Jump to prev git status" },
@@ -227,12 +218,25 @@ local defaults = {
                 "n",
                 "]h",
                 function()
-                    if not vim.b.oil_git_signs_exists then
-                        return
-                    end
                     require("oil-git-signs").jump_to_status("down", vim.v.count1)
                 end,
                 { desc = "Jump to next git status" },
+            },
+            {
+                { "n", "v" },
+                "<Leader>hs",
+                function()
+                    require("oil-git-signs").stage_selected()
+                end,
+                { desc = "Stage selected entries" },
+            },
+            {
+                { "n", "v" },
+                "<Leader>hu",
+                function()
+                    require("oil-git-signs").unstage_selected()
+                end,
+                { desc = "Unstage selected entries" },
             },
         },
     },
