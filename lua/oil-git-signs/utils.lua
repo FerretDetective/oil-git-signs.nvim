@@ -29,11 +29,32 @@ function M.get_current_positions()
     return vim.fn.getpos("v")[2], vim.fn.getpos(".")[2]
 end
 
+---Generate the name of the augroup for the single set of watchers for a given repository
+---@param repo_root string
+---@return string aug_name
+function M.repo_get_augroup_name(repo_root)
+    return string.format("OilGitSignsRepoWatcher%s", repo_root)
+end
+
+---Generate an augroup for the single set of watchers for a given repository
+---@param repo_root string
+---@return integer aug_id
+function M.repo_get_augroup(repo_root)
+    return vim.api.nvim_create_augroup(M.repo_get_augroup_name(repo_root), {})
+end
+
+---Generate an augroup for a given buffer
+---@param buffer integer buf_nr
+---@return string aug_name
+function M.buf_get_augroup_name(buffer)
+    return string.format("OilGitSigns_buf-%d", buffer)
+end
+
 ---Generate an augroup for a given buffer
 ---@param buffer integer buf_nr
 ---@return integer aug_id
 function M.buf_get_augroup(buffer)
-    return vim.api.nvim_create_augroup(("OilGitSigns_buf-%d"):format(buffer), {})
+    return vim.api.nvim_create_augroup(M.buf_get_augroup_name(buffer), {})
 end
 
 ---Generate a namespace for a given buffer

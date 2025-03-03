@@ -73,8 +73,11 @@ local function set_autocmds(evt)
 
     -- only create one set of watcher/autocmd per repo
     if not RepoWatcherExists[repo_root] then
+        local repo_watcher_augroup = utils.repo_get_augroup(repo_root)
+
         vim.api.nvim_create_autocmd("User", {
             pattern = "OilGitSignsQueryGitStatus",
+            group = repo_watcher_augroup,
             ---@type fun(event: oil_git_signs.AutoCmdEvent)
             callback = function(event)
                 local repo = event.data["repo_root_path"]
@@ -123,6 +126,7 @@ local function set_autocmds(evt)
 
         vim.api.nvim_create_autocmd("User", {
             pattern = "OilMutationComplete",
+            group = repo_watcher_augroup,
             ---@param event oil_git_signs.AutoCmdEvent
             callback = function(event)
                 local buf_name = vim.api.nvim_buf_get_name(event.buf)
@@ -185,12 +189,13 @@ local function set_autocmds(evt)
         desc = "cleanup oil-git-signs autocmds when oil unloads the buf",
         once = true,
         callback = vim.schedule_wrap(function()
-            vim.api.nvim_del_augroup_by_id(augroup)
+            pcall(vim.api.nvim_del_augroup_by_name, utils.buf_get_augroup_name(buf))
             local ref_count = RepoAttachedCount[repo_root] - 1
             RepoAttachedCount[repo_root] = ref_count
 
             --- no other clients are active in this repo
-            if ref_count then
+            if ref_count <= 0 then
+                pcall(vim.api.nvim_del_augroup_by_name, utils.repo_get_augroup_name(repo_root))
                 git.RepoStatusCache[repo_root] = nil
 
                 assert(RepoWatcherExists[repo_root]):stop()
