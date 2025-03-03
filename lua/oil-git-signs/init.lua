@@ -172,9 +172,11 @@ local function set_autocmds(evt)
         desc = "update oil git signs extmarks",
         pattern = "*",
         group = augroup,
-        callback = function()
-            vim.api.nvim_exec_autocmds("User", { pattern = "OilGitSignsRefreshExtmarks" })
-        end,
+        callback = utils.apply_debounce(function()
+            if not vim.bo.modified then
+                vim.api.nvim_exec_autocmds("User", { pattern = "OilGitSignsRefreshExtmarks" })
+            end
+        end, 25),
     })
 
     -- make sure to clean up auto commands when oil deletes the buffer
