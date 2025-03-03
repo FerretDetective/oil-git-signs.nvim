@@ -17,9 +17,10 @@ Add git information about your files when working with [oil.nvim](https://github
 
 ## Features
 - Display the git status of your files in oil.nvim as if you had run `git status --short`.
+- Create keymaps to jump straight to files with a certain type of status.
+- Stage and unstage files and directories within the oil buffer.
 - Fine control over what highlights and icons to use for each type of status.
 - Show status summaries on your statusline with [lualine.nvim](https://github.com/nvim-lualine/lualine.nvim) integration.
-- Create keymaps to jump straight to files with a certain type of status.
 - Very low impact on performance due to asynchronous processing.
 
 ## Requirements
@@ -39,11 +40,13 @@ wouldn't work. If you run into any issues, please open an issue and I will attem
         -- until you open an oil buffer
         "FerretDetective/oil-git-signs.nvim",
         ft = "oil",
+        ---@module "oil_git_signs"
+        ---@type oil_git_signs.Config
         opts = {},
     },
     {
         "stevearc/oil.nvim",
-        ---@module 'oil'
+        ---@module "oil"
         ---@type oil.SetupOpts
         opts = {
             win_options = {
@@ -64,8 +67,30 @@ These are the default options for this plugin. They can be programmatically acce
 
 ```lua
 local ogs = require("oil-git-signs")
+local GitStatus = ogs.GitStatus
 
 local defaults = {
+    -- show a confirm message when performing any git operations
+    ---@type boolean|fun(paths: string[]): boolean
+    confirm_git_operations = true,
+    -- don't show a confirm message for simple git operations
+    -- by default a simple git operation is defined as one of the following:
+    --     - no more than 5 git stages
+    --     - no more than 5 git unstages
+    ---@type boolean
+    skip_confirm_for_simple_git_operations = false,
+    -- used to define what the max number of git operations will be considered simple
+    -- note that is this only relevant when `skip_confirm_for_simple_git_operations` is enabled
+    ---@type { max_stages: integer, max_unstages: integer }
+    simple_git_operations = {
+        max_stages = 5,
+        max_unstages = 5,
+    },
+    -- dynamically control whether to oil-git-signs should attach to an oil buffer
+    ---@type fun(bufnr: integer): boolean
+    should_attach = function()
+        return true
+    end,
     -- used to control whether statuses for the index should be displayed on a per entry basis
     ---@type fun(entry_name: string, index_status: oil_git_signs.GitStatus): boolean
     show_index = function()
@@ -85,34 +110,34 @@ local defaults = {
     ---@type table<oil_git_signs.GitStatus, oil_git_signs.DisplayOption>
     index = {
         -- stylua: ignore start
-        [ogs.GitStatus.SUB_MOD_MODIFIED] = { icon = "m", hl_group = "OilGitSignsIndexSubModModified" },
-        [ogs.GitStatus.MODIFIED]         = { icon = "M", hl_group = "OilGitSignsIndexModified"       },
-        [ogs.GitStatus.UNMODIFIED]       = { icon = " ", hl_group = "OilGitSignsIndexUnmodified"     },
-        [ogs.GitStatus.TYPE_CHANGED]     = { icon = "T", hl_group = "OilGitSignsIndexTypeChanged"    },
-        [ogs.GitStatus.ADDED]            = { icon = "A", hl_group = "OilGitSignsIndexAdded"          },
-        [ogs.GitStatus.DELETED]          = { icon = "D", hl_group = "OilGitSignsIndexDeleted"        },
-        [ogs.GitStatus.RENAMED]          = { icon = "R", hl_group = "OilGitSignsIndexRenamed"        },
-        [ogs.GitStatus.COPIED]           = { icon = "C", hl_group = "OilGitSignsIndexCopied"         },
-        [ogs.GitStatus.UNMERGED]         = { icon = "U", hl_group = "OilGitSignsIndexUnmerged"       },
-        [ogs.GitStatus.UNTRACKED]        = { icon = "?", hl_group = "OilGitSignsIndexUntracked"      },
-        [ogs.GitStatus.IGNORED]          = { icon = "!", hl_group = "OilGitSignsIndexIgnored"        },
+        [GitStatus.SUB_MOD_MODIFIED] = { icon = "m", hl_group = "OilGitSignsIndexSubModModified" },
+        [GitStatus.MODIFIED]         = { icon = "M", hl_group = "OilGitSignsIndexModified"       },
+        [GitStatus.UNMODIFIED]       = { icon = " ", hl_group = "OilGitSignsIndexUnmodified"     },
+        [GitStatus.TYPE_CHANGED]     = { icon = "T", hl_group = "OilGitSignsIndexTypeChanged"    },
+        [GitStatus.ADDED]            = { icon = "A", hl_group = "OilGitSignsIndexAdded"          },
+        [GitStatus.DELETED]          = { icon = "D", hl_group = "OilGitSignsIndexDeleted"        },
+        [GitStatus.RENAMED]          = { icon = "R", hl_group = "OilGitSignsIndexRenamed"        },
+        [GitStatus.COPIED]           = { icon = "C", hl_group = "OilGitSignsIndexCopied"         },
+        [GitStatus.UNMERGED]         = { icon = "U", hl_group = "OilGitSignsIndexUnmerged"       },
+        [GitStatus.UNTRACKED]        = { icon = "?", hl_group = "OilGitSignsIndexUntracked"      },
+        [GitStatus.IGNORED]          = { icon = "!", hl_group = "OilGitSignsIndexIgnored"        },
         -- stylua: ignore end
     },
     -- used to customize how ext marks are displayed for statuses in the working tree
     ---@type table<oil_git_signs.GitStatus, oil_git_signs.DisplayOption>
     working_tree = {
         -- stylua: ignore start
-        [ogs.GitStatus.SUB_MOD_MODIFIED] = { icon = "m", hl_group = "OilGitSignsWorkingTreeSubModModified" },
-        [ogs.GitStatus.MODIFIED]         = { icon = "M", hl_group = "OilGitSignsWorkingTreeModified"       },
-        [ogs.GitStatus.UNMODIFIED]       = { icon = " ", hl_group = "OilGitSignsWorkingTreeUnmodified"     },
-        [ogs.GitStatus.TYPE_CHANGED]     = { icon = "T", hl_group = "OilGitSignsWorkingTreeTypeChanged"    },
-        [ogs.GitStatus.ADDED]            = { icon = "A", hl_group = "OilGitSignsWorkingTreeAdded"          },
-        [ogs.GitStatus.DELETED]          = { icon = "D", hl_group = "OilGitSignsWorkingTreeDeleted"        },
-        [ogs.GitStatus.RENAMED]          = { icon = "R", hl_group = "OilGitSignsWorkingTreeRenamed"        },
-        [ogs.GitStatus.COPIED]           = { icon = "C", hl_group = "OilGitSignsWorkingTreeCopied"         },
-        [ogs.GitStatus.UNMERGED]         = { icon = "U", hl_group = "OilGitSignsWorkingTreeUnmerged"       },
-        [ogs.GitStatus.UNTRACKED]        = { icon = "?", hl_group = "OilGitSignsWorkingTreeUntracked"      },
-        [ogs.GitStatus.IGNORED]          = { icon = "!", hl_group = "OilGitSignsWorkingTreeIgnored"        },
+        [GitStatus.SUB_MOD_MODIFIED] = { icon = "m", hl_group = "OilGitSignsWorkingTreeSubModModified" },
+        [GitStatus.MODIFIED]         = { icon = "M", hl_group = "OilGitSignsWorkingTreeModified"       },
+        [GitStatus.UNMODIFIED]       = { icon = " ", hl_group = "OilGitSignsWorkingTreeUnmodified"     },
+        [GitStatus.TYPE_CHANGED]     = { icon = "T", hl_group = "OilGitSignsWorkingTreeTypeChanged"    },
+        [GitStatus.ADDED]            = { icon = "A", hl_group = "OilGitSignsWorkingTreeAdded"          },
+        [GitStatus.DELETED]          = { icon = "D", hl_group = "OilGitSignsWorkingTreeDeleted"        },
+        [GitStatus.RENAMED]          = { icon = "R", hl_group = "OilGitSignsWorkingTreeRenamed"        },
+        [GitStatus.COPIED]           = { icon = "C", hl_group = "OilGitSignsWorkingTreeCopied"         },
+        [GitStatus.UNMERGED]         = { icon = "U", hl_group = "OilGitSignsWorkingTreeUnmerged"       },
+        [GitStatus.UNTRACKED]        = { icon = "?", hl_group = "OilGitSignsWorkingTreeUntracked"      },
+        [GitStatus.IGNORED]          = { icon = "!", hl_group = "OilGitSignsWorkingTreeIgnored"        },
         -- stylua: ignore end
     },
     -- used to determine the most important status to display in the case where a subdir has
@@ -120,34 +145,34 @@ local defaults = {
     ---@type table<oil_git_signs.GitStatus, integer>
     status_priority = {
         -- stylua: ignore start
-        [ogs.GitStatus.UNMERGED]         = 10,
-        [ogs.GitStatus.MODIFIED]         = 9,
-        [ogs.GitStatus.SUB_MOD_MODIFIED] = 8,
-        [ogs.GitStatus.ADDED]            = 7,
-        [ogs.GitStatus.DELETED]          = 6,
-        [ogs.GitStatus.RENAMED]          = 5,
-        [ogs.GitStatus.COPIED]           = 4,
-        [ogs.GitStatus.TYPE_CHANGED]     = 3,
-        [ogs.GitStatus.UNTRACKED]        = 2,
-        [ogs.GitStatus.IGNORED]          = 1,
-        [ogs.GitStatus.UNMODIFIED]       = 0,
+        [GitStatus.UNMERGED]         = 10,
+        [GitStatus.MODIFIED]         = 9,
+        [GitStatus.SUB_MOD_MODIFIED] = 8,
+        [GitStatus.ADDED]            = 7,
+        [GitStatus.DELETED]          = 6,
+        [GitStatus.RENAMED]          = 5,
+        [GitStatus.COPIED]           = 4,
+        [GitStatus.TYPE_CHANGED]     = 3,
+        [GitStatus.UNTRACKED]        = 2,
+        [GitStatus.IGNORED]          = 1,
+        [GitStatus.UNMODIFIED]       = 0,
         -- stylua: ignore end
     },
     -- used when creating the summary to determine how to count each status type
     ---@type table<oil_git_signs.GitStatus, "added"|"removed"|"modified"|nil>
     status_classification = {
         -- stylua: ignore start
-        [ogs.GitStatus.SUB_MOD_MODIFIED] = "modified",
-        [ogs.GitStatus.UNMERGED]         = "modified",
-        [ogs.GitStatus.MODIFIED]         = "modified",
-        [ogs.GitStatus.ADDED]            = "added",
-        [ogs.GitStatus.DELETED]          = "removed",
-        [ogs.GitStatus.RENAMED]          = "modified",
-        [ogs.GitStatus.COPIED]           = "added",
-        [ogs.GitStatus.TYPE_CHANGED]     = "modified",
-        [ogs.GitStatus.UNTRACKED]        = "added",
-        [ogs.GitStatus.UNMODIFIED]       = nil,
-        [ogs.GitStatus.IGNORED]          = nil,
+        [GitStatus.SUB_MOD_MODIFIED] = "modified",
+        [GitStatus.UNMERGED]         = "modified",
+        [GitStatus.MODIFIED]         = "modified",
+        [GitStatus.ADDED]            = "added",
+        [GitStatus.DELETED]          = "removed",
+        [GitStatus.RENAMED]          = "modified",
+        [GitStatus.COPIED]           = "added",
+        [GitStatus.TYPE_CHANGED]     = "modified",
+        [GitStatus.UNTRACKED]        = "added",
+        [GitStatus.UNMODIFIED]       = nil,
+        [GitStatus.IGNORED]          = nil,
         -- stylua: ignore end
     },
     -- used to create buffer local keymaps when oil-git-signs attaches to a buffer
@@ -162,7 +187,7 @@ local defaults = {
 ### Navigation Keymaps
 <details>
     <summary>
-        Examples of some standard keymaps for jumping to changed files within the oil buffer.
+        Examples of some standard keymaps for jumping to changed files, and (un)staging files within the oil buffer.
     </summary>
 
 ```lua
@@ -176,9 +201,6 @@ local defaults = {
                 "n",
                 "[H",
                 function()
-                    if not vim.b.oil_git_signs_exists then
-                        return
-                    end
                     require("oil-git-signs").jump_to_status("up", -vim.v.count1)
                 end,
                 { desc = "Jump to first git status" },
@@ -187,9 +209,6 @@ local defaults = {
                 "n",
                 "]H",
                 function()
-                    if not vim.b.oil_git_signs_exists then
-                        return
-                    end
                     require("oil-git-signs").jump_to_status("down", -vim.v.count1)
                 end,
                 { desc = "Jump to last git status" },
@@ -198,9 +217,6 @@ local defaults = {
                 "n",
                 "[h",
                 function()
-                    if not vim.b.oil_git_signs_exists then
-                        return
-                    end
                     require("oil-git-signs").jump_to_status("up", vim.v.count1)
                 end,
                 { desc = "Jump to prev git status" },
@@ -209,12 +225,25 @@ local defaults = {
                 "n",
                 "]h",
                 function()
-                    if not vim.b.oil_git_signs_exists then
-                        return
-                    end
                     require("oil-git-signs").jump_to_status("down", vim.v.count1)
                 end,
                 { desc = "Jump to next git status" },
+            },
+            {
+                { "n", "v" },
+                "<Leader>hs",
+                function()
+                    require("oil-git-signs").stage_selected()
+                end,
+                { desc = "Stage selected entries" },
+            },
+            {
+                { "n", "v" },
+                "<Leader>hu",
+                function()
+                    require("oil-git-signs").unstage_selected()
+                end,
+                { desc = "Unstage selected entries" },
             },
         },
     },
@@ -468,6 +497,55 @@ ogs.jump_to_status: function(
 )
 ```
 
+#### ogs.stage_selected
+##### Description
+Stage selected files within the oil buffer.
+
+In normal mode the selected file is the file under the cursor, while in visual mode the visually
+selected files are used.
+
+##### Type
+```
+ogs.stage_selected: function()
+```
+
+#### ogs.unstage_selected
+##### Description
+Unstage selected files within the oil buffer.
+
+In normal mode the selected file is the file under the cursor, while in visual mode the visually
+selected files are used.
+
+##### Type
+```
+ogs.unstage_selected: function()
+```
+
+#### ogs.refresh_git_status
+##### Description
+Force a refresh of the cached git status for a given repository.
+
+`repo_root_path` is the path to the root of a given git repository (i.e. the directory that contains
+a .git). If it is omitted, and you are an oil buffer it will try to use the current oil buffer's
+root.
+
+To get the path to a repository's root from a given oil buffer use the following:
+
+```lua
+local oil_utils = require("oil.util")
+local oil_git = require("oil-git-signs.git")
+
+local buf = vim.api.nvim_get_current_buf()
+local buf_name = vim.api.nvim_buf_get_name(buf)
+local _, oil_dir = oil_utils.parse_url(buf_name)
+local repo_root_path = oil_git.get_root(assert(oil_dir))
+```
+
+##### Type
+```
+ogs.refresh_git_status: function(repo_root_path: string?)
+```
+
 #### ogs.defaults
 ##### Description
 This is a **readonly** table that contains the default configuration options for this plugin.
@@ -476,6 +554,10 @@ See [Options](#options) for more details.
 ##### Type
 ```
 ogs.Config: {
+    confirm_git_operations: boolean | function(paths: string[]): boolean,
+    skip_confirm_for_simple_git_operations: boolean,
+    simple_git_operations: table<{ max_stages: integer, max_unstages: integer }>,
+    should_attach: function(bufnr: integer): boolean,
     show_index: function(entry_name: string, index_status: ogs.GitStatus): boolean,
     show_working_tree: function(entry_name: string, index_status: ogs.GitStatus): boolean,
     show_ignored: function(oil_dir: string): boolean,
@@ -494,6 +576,10 @@ This is the table that contains the current user configuration for this plugin.
 ##### Type
 ```
 ogs.Config: {
+    confirm_git_operations: boolean | function(paths: string[]): boolean,
+    skip_confirm_for_simple_git_operations: boolean,
+    simple_git_operations: table<{ max_stages: integer, max_unstages: integer }>,
+    should_attach: function(bufnr: integer): boolean,
     show_index: function(entry_name: string, index_status: ogs.GitStatus): boolean,
     show_working_tree: function(entry_name: string, index_status: ogs.GitStatus): boolean,
     show_ignored: function(oil_dir: string): boolean,
