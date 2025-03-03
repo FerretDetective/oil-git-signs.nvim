@@ -516,6 +516,31 @@ selected files are used.
 ogs.unstage_selected: function()
 ```
 
+#### ogs.refresh_git_status
+##### Description
+Force a refresh of the cached git status for a given repository.
+
+`repo_root_path` is the path to the root of a given git repository (i.e. the directory that contains
+a .git). If it is omitted, and you are an oil buffer it will try to use the current oil buffer's
+root.
+
+To get the path to a repository's root from a given oil buffer use the following:
+
+```lua
+local oil_utils = require("oil.util")
+local oil_git = require("oil-git-signs.git")
+
+local buf = vim.api.nvim_get_current_buf()
+local buf_name = vim.api.nvim_buf_get_name(buf)
+local _, oil_dir = oil_utils.parse_url(buf_name)
+local repo_root_path = oil_git.get_root(assert(oil_dir))
+```
+
+##### Type
+```
+ogs.refresh_git_status: function(repo_root_path: string?)
+```
+
 #### ogs.defaults
 ##### Description
 This is a **readonly** table that contains the default configuration options for this plugin.

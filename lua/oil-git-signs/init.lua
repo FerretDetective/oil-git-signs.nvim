@@ -73,27 +73,50 @@ local function set_autocmds(evt)
 
     -- only create one set of watcher/autocmd per repo
     if not RepoWatcherExists[repo_root] then
-        local do_update = function()
-            if git.RepoBeingQueried[repo_root] then
-                return
-            end
+        vim.api.nvim_create_autocmd("User", {
+            pattern = "OilGitSignsQueryGitStatus",
+            ---@type fun(event: oil_git_signs.AutoCmdEvent)
+            callback = function(event)
+                local repo = event.data["repo_root_path"]
 
-            git.query_git_status(repo_root, function(status, summary)
-                git.RepoStatusCache[repo_root] = { status = status, summary = summary }
+                if type(repo) ~= "string" then
+                    utils.error("cannot query git status, no repo specified")
+                    return
+                end
 
-                vim.schedule(function()
-                    vim.api.nvim_exec_autocmds("User", { pattern = "OilGitSignsRefreshExtmarks" })
+                if RepoAttachedCount[repo] == 0 then
+                    utils.error("cannot query git status, no oil bufs in the repo exist")
+                    return
+                end
+
+                if git.RepoBeingQueried[repo_root] then
+                    return
+                end
+
+                git.query_git_status(repo_root, function(status, summary)
+                    git.RepoStatusCache[repo_root] = { status = status, summary = summary }
+
+                    vim.schedule(function()
+                        vim.api.nvim_exec_autocmds(
+                            "User",
+                            { pattern = "OilGitSignsRefreshExtmarks" }
+                        )
+                    end)
                 end)
-            end)
-        end
+            end,
+        })
 
+        --TODO: The ideal solution would be to have two `FsWatcher`s.
+        -- The first would recursively monitor the repo for changes to the working tree,
+        -- and the other would monitor just the git index. Unfortunately libuv currently only
+        -- supports recursive file change detection on OSX and Windows.
         local watcher = FsWatcher.new(string.format("%s/.git/index", repo_root))
         watcher:register_callback(function(_, _, events)
             if not events.change then
                 return
             end
 
-            do_update()
+            api.refresh_git_status(repo_root)
         end)
         watcher:start()
         RepoWatcherExists[repo_root] = watcher
@@ -110,7 +133,7 @@ local function set_autocmds(evt)
                     return
                 end
 
-                do_update()
+                api.refresh_git_status(repo_root)
             end,
         })
     end
@@ -171,7 +194,6 @@ local function set_autocmds(evt)
                 assert(RepoWatcherExists[repo_root]):stop()
                 RepoWatcherExists[repo_root] = nil
             end
-
         end),
     })
 end
@@ -194,6 +216,7 @@ function M.setup(opts)
     M.jump_to_status = api.jump_to_status
     M.stage_selected = api.stage_selected
     M.unstage_selected = api.unstage_selected
+    M.refresh_git_status = api.refresh_git_status
 
     config.options = vim.tbl_deep_extend("force", M.defaults, opts or {})
     M.options = config.options

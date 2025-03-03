@@ -4,6 +4,8 @@ local config = require("oil-git-signs.config")
 local git = require("oil-git-signs.git")
 local utils = require("oil-git-signs.utils")
 
+local oil_utils = require("oil.util")
+
 ---Navigate the cursor to an entry with a given status.
 ---
 ---Defaults:
@@ -162,7 +164,6 @@ function M.stage_selected()
                     utils.error("failed to stage selected items")
                 end
             end
-
         end)
     end)
 end
@@ -237,6 +238,44 @@ function M.unstage_selected()
                 end
             end
         end)
+    end)
+end
+
+---Refresh the git status cache for `repo_root_path`.
+---
+---To get the path to a repo's root from a given oil buffer use the following:
+---```lua
+---local oil_utils = require("oil.util")
+---local oil_git = require("oil-git-signs.git")
+---
+---local buf = vim.api.nvim_get_current_buf()
+---local buf_name = vim.api.nvim_buf_get_name(buf)
+---local _, oil_dir = oil_utils.parse_url(buf_name)
+---local repo_root_path = oil_git.get_root(assert(oil_dir))
+---```
+---@param repo_root_path string? if nil and in an oil buffer, try that buffer's repo_root else fail
+function M.refresh_git_status(repo_root_path)
+    if repo_root_path == nil then
+        if vim.bo.filetype ~= "oil" then
+            utils.error("no repo_root was given and it could not be inferred from the current buf")
+            return
+        end
+
+        local buf = vim.api.nvim_get_current_buf()
+        local buf_name = vim.api.nvim_buf_get_name(buf)
+        local _, oil_dir = oil_utils.parse_url(buf_name)
+        repo_root_path = git.get_root(assert(oil_dir))
+    end
+
+    vim.schedule(function()
+        utils.info(string.format("querying new git status for repo %s", repo_root_path))
+
+        vim.api.nvim_exec_autocmds("User", {
+            pattern = "OilGitSignsQueryGitStatus",
+            data = {
+                repo_root_path = repo_root_path,
+            },
+        })
     end)
 end
 
