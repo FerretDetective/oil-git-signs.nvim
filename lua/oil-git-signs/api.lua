@@ -268,8 +268,6 @@ function M.refresh_git_status(repo_root_path)
     end
 
     vim.schedule(function()
-        utils.info(string.format("querying new git status for repo %s", repo_root_path))
-
         vim.api.nvim_exec_autocmds("User", {
             pattern = "OilGitSignsQueryGitStatus",
             data = {

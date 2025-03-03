@@ -60,6 +60,7 @@ function FsWatcher:start(flags)
         for _, cb in ipairs(self._callbacks) do
             pcall(cb, ...)
         end
+        self:stop()
         self:start(flags)
     end)
 
