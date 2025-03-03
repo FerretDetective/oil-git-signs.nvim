@@ -36,6 +36,10 @@ local function set_autocmds(evt)
         return
     end
 
+    if not config.options.should_attach(buf) then
+        return
+    end
+
     local path = require("oil").get_current_dir(buf)
     -- need extra check in case path isn't actually present in the fs
     -- e.g. when entering a dir that has yet to have been created with `:w`

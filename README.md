@@ -86,6 +86,11 @@ local defaults = {
         max_stages = 5,
         max_unstages = 5,
     },
+    -- dynamically control whether to oil-git-signs should attach to an oil buffer
+    ---@type fun(bufnr: integer): boolean
+    should_attach = function()
+        return true
+    end,
     -- used to control whether statuses for the index should be displayed on a per entry basis
     ---@type fun(entry_name: string, index_status: oil_git_signs.GitStatus): boolean
     show_index = function()
@@ -552,6 +557,7 @@ ogs.Config: {
     confirm_git_operations: boolean | function(paths: string[]): boolean,
     skip_confirm_for_simple_git_operations: boolean,
     simple_git_operations: table<{ max_stages: integer, max_unstages: integer }>,
+    should_attach: function(bufnr: integer): boolean,
     show_index: function(entry_name: string, index_status: ogs.GitStatus): boolean,
     show_working_tree: function(entry_name: string, index_status: ogs.GitStatus): boolean,
     show_ignored: function(oil_dir: string): boolean,
@@ -573,6 +579,7 @@ ogs.Config: {
     confirm_git_operations: boolean | function(paths: string[]): boolean,
     skip_confirm_for_simple_git_operations: boolean,
     simple_git_operations: table<{ max_stages: integer, max_unstages: integer }>,
+    should_attach: function(bufnr: integer): boolean,
     show_index: function(entry_name: string, index_status: ogs.GitStatus): boolean,
     show_working_tree: function(entry_name: string, index_status: ogs.GitStatus): boolean,
     show_ignored: function(oil_dir: string): boolean,
