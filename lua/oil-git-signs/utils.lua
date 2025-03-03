@@ -126,39 +126,49 @@ local function format_log(msg)
     return "OilGitSigns: " .. msg
 end
 
+---Write a log message using vim.notify
+---@param msg string
+---@param level integer
+---@param opts table?
+local function write_log(msg, level, opts)
+    vim.schedule(function()
+        vim.notify(format_log(msg), level, opts or {})
+    end)
+end
+
 ---Log a message with `vim.notify` with the level info.
 ---@param msg string
 ---@param opts table?
 function M.info(msg, opts)
-    vim.notify(format_log(msg), vim.log.levels.INFO, opts or {})
+    write_log(msg, vim.log.levels.INFO, opts)
 end
 
 ---Log a message with `vim.notify` with the level debug.
 ---@param msg string
 ---@param opts table?
 function M.debug(msg, opts)
-    vim.notify(format_log(msg), vim.log.levels.DEBUG, opts or {})
+    write_log(msg, vim.log.levels.DEBUG, opts)
 end
 
 ---Log a message with `vim.notify` with the level warn.
 ---@param msg string
 ---@param opts table?
 function M.warn(msg, opts)
-    vim.notify(format_log(msg), vim.log.levels.WARN, opts or {})
+    write_log(msg, vim.log.levels.WARN, opts)
 end
 
 ---Log a message with `vim.notify` with the level error.
 ---@param msg string
 ---@param opts table?
 function M.error(msg, opts)
-    vim.notify(format_log(msg), vim.log.levels.ERROR, opts or {})
+    write_log(msg, vim.log.levels.ERROR, opts)
 end
 
 ---Log a message with `vim.notify` with the level trace.
 ---@param msg string
 ---@param opts table?
 function M.trace(msg, opts)
-    vim.notify(format_log(msg), vim.log.levels.TRACE, opts or {})
+    write_log(msg, vim.log.levels.TRACE, opts)
 end
 
 return M

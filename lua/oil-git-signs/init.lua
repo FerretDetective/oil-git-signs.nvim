@@ -1,3 +1,14 @@
+local utils = require("oil-git-signs.utils")
+local require = utils.lazy_require
+
+local FsWatcher = require("oil-git-signs.watcher")
+local api = require("oil-git-signs.api")
+local config = require("oil-git-signs.config")
+local extmarks = require("oil-git-signs.extmarks")
+local git = require("oil-git-signs.git")
+
+local unpack = unpack or table.unpack
+
 local M = {}
 
 ---@class oil_git_signs.AutoCmdEvent
@@ -9,16 +20,164 @@ local M = {}
 ---@field file string expanded value of `<afile>`
 ---@field data any arbitrary data passed from `vim.api.nvim_exec_autocmds`
 
+---Keep track of whether an fs watcher already exists for a given repo
+---@type table<string, oil_git_signs.FsWatcher?>
+local RepoWatcherExists = {}
+
+---Keep track of the number of attached clients for a given repo
+---@type table<string, integer?>
+local RepoAttachedCount = {}
+
+---@param evt oil_git_signs.AutoCmdEvent
+local function set_autocmds(evt)
+    local buf = evt.buf
+
+    if vim.b[buf].oil_git_signs_exists then
+        return
+    end
+
+    local path = require("oil").get_current_dir(buf)
+    -- need extra check in case path isn't actually present in the fs
+    -- e.g. when entering a dir that has yet to have been created with `:w`
+    if path == nil or vim.fn.isdirectory(path) == 0 then
+        return
+    end
+
+    local repo_root = git.get_root(path)
+    if repo_root == nil then
+        return
+    end
+
+    vim.b[buf].oil_git_signs_exists = true
+
+    local repo_attached_count = RepoAttachedCount[repo_root]
+    if repo_attached_count == nil then
+        repo_attached_count = 1
+    else
+        repo_attached_count = repo_attached_count + 1
+    end
+    RepoAttachedCount[repo_root] = repo_attached_count
+
+    for _, keymap in ipairs(M.options.keymaps) do
+        keymap[4] = vim.tbl_deep_extend("force", keymap[4] or {}, { buffer = buf })
+        vim.keymap.set(unpack(keymap))
+    end
+
+    local namespace = utils.buf_get_namespace(buf)
+    local augroup = utils.buf_get_augroup(buf)
+
+    -- query initial git status
+    git.query_git_status(repo_root, function(status, summary)
+        git.RepoStatusCache[repo_root] = { status = status, summary = summary }
+    end)
+
+    -- only create one set of watcher/autocmd per repo
+    if not RepoWatcherExists[repo_root] then
+        local do_update = function()
+            if git.RepoBeingQueried[repo_root] then
+                return
+            end
+
+            git.query_git_status(repo_root, function(status, summary)
+                git.RepoStatusCache[repo_root] = { status = status, summary = summary }
+
+                vim.schedule(function()
+                    vim.api.nvim_exec_autocmds("User", { pattern = "OilGitSignsRefreshExtmarks" })
+                end)
+            end)
+        end
+
+        local watcher = FsWatcher.new(string.format("%s/.git/index", repo_root))
+        watcher:register_callback(function(_, _, events)
+            if not events.change then
+                return
+            end
+
+            do_update()
+        end)
+        watcher:start()
+        RepoWatcherExists[repo_root] = watcher
+
+        vim.api.nvim_create_autocmd("User", {
+            pattern = "OilMutationComplete",
+            ---@param event oil_git_signs.AutoCmdEvent
+            callback = function(event)
+                local buf_name = vim.api.nvim_buf_get_name(event.buf)
+                local _, event_path = require("oil.util").parse_url(buf_name)
+                local event_root = git.get_root(assert(event_path))
+
+                if event_root ~= repo_root then
+                    return
+                end
+
+                do_update()
+            end,
+        })
+    end
+
+    ---@param event oil_git_signs.AutoCmdEvent
+    local refresh_extmarks = vim.schedule_wrap(function(event)
+        if vim.bo[event.buf].filetype ~= "oil" then
+            return
+        end
+
+        local status = git.RepoStatusCache[repo_root]
+
+        if status == nil then
+            utils.error(string.format("RepoStatusCache is empty for %s/.git", repo_root))
+            return
+        end
+
+        extmarks.update_status_ext_marks(
+            status.status,
+            buf,
+            namespace,
+            1,
+            vim.api.nvim_buf_line_count(buf)
+        )
+        vim.b[buf].oil_git_signs_summary = status.summary
+    end)
+
+    -- update extmarks when we are requested or when we enter a new buffer
+    vim.api.nvim_create_autocmd("User", {
+        pattern = { "OilGitSignsRefreshExtmarks" },
+        desc = "update oil git signs extmarks",
+        group = augroup,
+        callback = refresh_extmarks,
+    })
+    vim.api.nvim_create_autocmd("BufModifiedSet", {
+        desc = "update oil git signs extmarks",
+        pattern = "*",
+        group = augroup,
+        callback = function()
+            vim.api.nvim_exec_autocmds("User", { pattern = "OilGitSignsRefreshExtmarks" })
+        end,
+    })
+
+    -- make sure to clean up auto commands when oil deletes the buffer
+    vim.api.nvim_create_autocmd("BufWipeout", {
+        buffer = buf,
+        desc = "cleanup oil-git-signs autocmds when oil unloads the buf",
+        once = true,
+        callback = vim.schedule_wrap(function()
+            vim.api.nvim_del_augroup_by_id(augroup)
+            local ref_count = RepoAttachedCount[repo_root] - 1
+            RepoAttachedCount[repo_root] = ref_count
+
+            --- no other clients are active in this repo
+            if ref_count then
+                git.RepoStatusCache[repo_root] = nil
+
+                assert(RepoWatcherExists[repo_root]):stop()
+                RepoWatcherExists[repo_root] = nil
+            end
+
+        end),
+    })
+end
+
 ---@param opts oil_git_signs.Config?
 function M.setup(opts)
-    local utils = require("oil-git-signs.utils")
-    local api = require("oil-git-signs.api")
-    local config = require("oil-git-signs.config")
-    local extmarks = require("oil-git-signs.extmarks")
-    local git = require("oil-git-signs.git")
-
-    local unpack = unpack or table.unpack
-
     if vim.fn.executable("git") == 0 then
         utils.error("no executable git detected")
         return
@@ -69,90 +228,7 @@ function M.setup(opts)
         pattern = "oil",
         desc = "main oil-git-signs trigger",
         group = vim.api.nvim_create_augroup("OilGitSigns", {}),
-        ---@param evt oil_git_signs.AutoCmdEvent
-        callback = function(evt)
-            if vim.b[evt.buf].oil_git_signs_exists then
-                return
-            end
-
-            local path = require("oil").get_current_dir(evt.buf)
-            -- need extra check in case path isn't actually present in the fs
-            -- e.g. when entering a dir that has yet to have been created with `:w`
-            if path == nil or vim.fn.isdirectory(path) == 0 then
-                return
-            end
-
-            local git_root = git.get_root(path)
-            if git_root == nil then
-                return
-            end
-
-            vim.b[evt.buf].oil_git_signs_exists = true
-
-            for _, keymap in ipairs(M.options.keymaps) do
-                keymap[4] = vim.tbl_deep_extend("force", keymap[4] or {}, { buffer = evt.buf })
-                vim.keymap.set(unpack(keymap))
-            end
-
-            local current_status = nil
-            local current_summary = nil
-
-            local namespace = utils.buf_get_namespace(evt.buf)
-            local augroup = utils.buf_get_augroup(evt.buf)
-
-            ---@type fun(start: integer, stop: integer)
-            local clear_extmarks = utils.apply_debounce(function(start, stop)
-                vim.api.nvim_buf_clear_namespace(evt.buf, namespace, start, stop)
-            end, 250)
-
-            ---@type fun(e: oil_git_signs.AutoCmdEvent)
-            local updater = utils.apply_debounce(function(e)
-                -- don't refresh non-ogs bufs
-                if not vim.b[e.buf].oil_git_signs_exists then
-                    return
-                end
-
-                local buf_len = vim.api.nvim_buf_line_count(evt.buf)
-
-                -- HACK: ?
-                -- For a reason currently unknown to me, when reloading the buffer the namespaced
-                -- extmarks would continue grow without bound. So this call ensures that there are
-                -- only extmarks within the bounds of the buffer
-                clear_extmarks(buf_len, -1)
-
-                current_status, current_summary = git.query_git_status(path)
-
-                vim.b[evt.buf].oil_git_signs_summary = current_summary
-                extmarks.update_status_ext_marks(current_status, evt.buf, namespace, 1, buf_len)
-            end, 100)
-
-            -- only update git status & ext_marks after oil has finished mutation, it has entered/reloaded,
-            -- or when we need to refresh (e.g. after staging a file)
-            vim.api.nvim_create_autocmd("User", {
-                pattern = { "OilEnter", "OilMutationComplete" },
-                desc = "link oil.nvim triggers to oil-git-signs triggers",
-                group = augroup,
-                callback = function()
-                    vim.api.nvim_exec_autocmds("User", { pattern = "OilGitSignsRefresh" })
-                end,
-            })
-            vim.api.nvim_create_autocmd("User", {
-                pattern = "OilGitSignsRefresh",
-                desc = "update git status & extmarks",
-                group = augroup,
-                callback = updater,
-            })
-
-            -- make sure to clean up auto commands when oil deletes the buffer
-            vim.api.nvim_create_autocmd("BufWipeout", {
-                buffer = evt.buf,
-                desc = "cleanup oil-git-signs autocmds when oil unloads the buf",
-                once = true,
-                callback = vim.schedule_wrap(function()
-                    vim.api.nvim_del_augroup_by_id(augroup)
-                end),
-            })
-        end,
+        callback = set_autocmds,
     })
 end
 

@@ -17,7 +17,8 @@ function M.update_status_ext_marks(status, buffer, namespace, start, stop)
             return
         end
 
-        local git_status = status[entry.name]
+        local _, path = require("oil.util").parse_url(vim.api.nvim_buf_get_name(buffer))
+        local git_status = status[path .. entry.name]
 
         if git_status ~= nil then
             jump_list[lnum] = git_status.index .. git_status.working_tree

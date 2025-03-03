@@ -114,7 +114,7 @@ function M.stage_selected()
     vim.schedule(function()
         local buf = vim.api.nvim_get_current_buf()
         local oil = require("oil")
-        local cwd = oil.get_current_dir(buf)
+        local cwd = assert(oil.get_current_dir(buf))
 
         local paths = {} ---@type string[]
         local paths_string = "" ---@type string
@@ -126,8 +126,13 @@ function M.stage_selected()
                 return
             end
 
-            table.insert(paths, cwd .. entry.name)
-            paths_string = paths_string .. "\t" .. entry.name .. "\n"
+            local name = entry.name
+            if entry.type == "directory" then
+                name = name .. "/"
+            end
+
+            table.insert(paths, cwd .. name)
+            paths_string = paths_string .. "    - " .. name .. "\n"
         end
 
         if
@@ -148,17 +153,16 @@ function M.stage_selected()
             end
         end
 
-        git.stage_files(paths, function(out)
-            if out.code == 0 then
-                vim.schedule(function()
-                    vim.api.nvim_exec_autocmds("User", { pattern = "OilGitSignsRefresh" })
-                end)
-            elseif out.stderr ~= nil then
-                utils.error("failed to stage selected items:\n" .. out.stderr)
-            else
-                -- No git error message to give
-                utils.error("failed to stage selected items")
+        git.stage_files(paths, assert(git.get_root(cwd)), function(out)
+            if out.code ~= 0 then
+                if out.stderr ~= nil then
+                    utils.error("failed to stage selected items:\n" .. out.stderr)
+                else
+                    -- no git error message to give
+                    utils.error("failed to stage selected items")
+                end
             end
+
         end)
     end)
 end
@@ -181,7 +185,7 @@ function M.unstage_selected()
     vim.schedule(function()
         local buf = vim.api.nvim_get_current_buf()
         local oil = require("oil")
-        local cwd = oil.get_current_dir(buf)
+        local cwd = assert(oil.get_current_dir(buf))
 
         local paths = {} ---@type string[]
         local paths_string = "" ---@type string
@@ -193,8 +197,13 @@ function M.unstage_selected()
                 return
             end
 
-            table.insert(paths, cwd .. entry.name)
-            paths_string = paths_string .. "\t" .. entry.name .. "\n"
+            local name = entry.name
+            if entry.type == "directory" then
+                name = name .. "/"
+            end
+
+            table.insert(paths, cwd .. name)
+            paths_string = paths_string .. "    - " .. name .. "\n"
         end
 
         if
@@ -218,21 +227,17 @@ function M.unstage_selected()
             end
         end
 
-        git.unstage_files(paths, function(out)
-            if out.code == 0 then
-                vim.schedule(function()
-                    vim.api.nvim_exec_autocmds("User", { pattern = "OilGitSignsRefresh" })
-                end)
-            elseif out.stderr ~= nil then
-                utils.error("failed to unstage selected items:\n" .. out.stderr)
-            else
-                -- no git error message to give
-                utils.error("failed to unstage selected items")
+        git.unstage_files(paths, assert(git.get_root(cwd)), function(out)
+            if out.code ~= 0 then
+                if out.stderr ~= nil then
+                    utils.error("failed to unstage selected items:\n" .. out.stderr)
+                else
+                    -- no git error message to give
+                    utils.error("failed to unstage selected items")
+                end
             end
         end)
     end)
 end
-
--- TODO: sort by status function
 
 return M
