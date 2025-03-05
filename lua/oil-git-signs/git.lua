@@ -23,7 +23,11 @@ M.GitStatus = {
 }
 
 ---@type oil_git_signs.GitStatus[]
-M.AllStatuses = { "m", " ", "M", "T", "A", "D", "R", "C", "U", "?", "!" }
+M.AllStatuses = vim.iter(M.GitStatus)
+    :map(function(_, v)
+        return v
+    end)
+    :totable()
 
 ---@class oil_git_signs.EntryStatus
 ---@field index oil_git_signs.GitStatus

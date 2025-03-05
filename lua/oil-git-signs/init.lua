@@ -70,11 +70,6 @@ local function set_autocmds(evt)
     local namespace = utils.buf_get_namespace(buf)
     local augroup = utils.buf_get_augroup(buf)
 
-    -- query initial git status
-    git.query_git_status(repo_root, function(status, summary)
-        git.RepoStatusCache[repo_root] = { status = status, summary = summary }
-    end)
-
     -- only create one set of watcher/autocmd per repo
     if not RepoWatcherExists[repo_root] then
         local repo_watcher_augroup = utils.repo_get_augroup(repo_root)
@@ -207,6 +202,9 @@ local function set_autocmds(evt)
             end
         end),
     })
+
+    -- query the initial status
+    api.refresh_git_status(repo_root)
 end
 
 ---@param opts oil_git_signs.Config?

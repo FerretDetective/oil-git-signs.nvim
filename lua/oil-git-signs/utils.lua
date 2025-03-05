@@ -21,8 +21,8 @@ function M.lazy_require(modname)
     })
 end
 
---Return start and stop line numbers of the current visual selection or the cursor position
----when not in visual mode.
+---Return start and stop line numbers of the current visual selection, 
+---or the current cursor position when not in visual mode.
 ---@return integer
 ---@return integer
 function M.get_current_positions()

@@ -1,6 +1,7 @@
 local M = {}
 
 local config = require("oil-git-signs.config")
+local utils = require("oil-git-signs.utils")
 
 ---Create/update the status ext_marks for the current buffer
 ---@param status table<string, oil_git_signs.EntryStatus?>
@@ -11,14 +12,21 @@ local config = require("oil-git-signs.config")
 function M.update_status_ext_marks(status, buffer, namespace, start, stop)
     local jump_list = {}
 
+    local buf_name = vim.api.nvim_buf_get_name(buffer)
+    local _, oil_cwd = require("oil.util").parse_url(buf_name)
+
+    if oil_cwd == nil then
+        utils.error("failed to parse oil dir")
+        return
+    end
+
     for lnum = start, stop do
         local entry = require("oil").get_entry_on_line(buffer, lnum)
         if entry == nil then
             return
         end
 
-        local _, path = require("oil.util").parse_url(vim.api.nvim_buf_get_name(buffer))
-        local git_status = status[path .. entry.name]
+        local git_status = status[oil_cwd .. entry.name]
 
         if git_status ~= nil then
             jump_list[lnum] = git_status.index .. git_status.working_tree

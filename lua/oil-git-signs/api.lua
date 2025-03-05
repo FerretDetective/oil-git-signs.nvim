@@ -46,42 +46,49 @@ function M.jump_to_status(direction, count, statuses)
     local cursor_row = vim.api.nvim_win_get_cursor(win)[1]
 
     local start, stop, step
-    if direction == "down" and count > 0 then
-        -- start at the cursor and move down
-        start = cursor_row + 1
-        stop = buf_len
-        step = 1
-    elseif direction == "down" and count < 0 then
-        -- start at the end and move up (e.g. getting the last status)
-        start = buf_len
-        stop = cursor_row
-        step = -1
-    elseif direction == "up" and count > 0 then
-        -- start at the cursor and move up
-        start = cursor_row - 1
-        stop = 1
-        step = -1
+    if direction == "down" then
+        if count > 0 then
+            -- start at the cursor and move down
+            start = cursor_row + 1
+            stop = buf_len
+            step = 1
+        else
+            -- start at the end and move up (e.g. getting the last status)
+            start = buf_len
+            stop = cursor_row
+            step = -1
+        end
+    elseif direction == "up" then
+        if count > 0 then
+            -- start at the cursor and move up
+            start = cursor_row - 1
+            stop = 1
+            step = -1
+        else
+            -- start at the top and move down (e.g. getting the first status)
+            start = 1
+            stop = cursor_row
+            step = 1
+        end
     else
-        -- start at the top and move down (e.g. getting the first status)
-        start = 1
-        stop = cursor_row
-        step = 1
+        utils.error(("'%s' is not a valid direction"):format(direction))
+        return
     end
 
     -- count must be positive in order to be used to the determine how many statuses we need to visit
     count = math.abs(count)
-    ---@type oil_git_signs.JumpList?
-    local jump_list = vim.b[buf].oil_git_signs_jump_list
 
+    local jump_list = vim.b[buf].oil_git_signs_jump_list ---@type oil_git_signs.JumpList?
+
+    -- ensure the jump_list is valid in the buffer before jumping (i.e. not out of sync)
     if jump_list ~= nil and #jump_list == buf_len then
         for lnum = start, stop, step do
             local line_status = jump_list[lnum]
 
             if line_status ~= vim.NIL then
+                ---@cast line_status string
                 if
-                    ---@diagnostic disable-next-line: param-type-mismatch
                     line_status:sub(1, 1):match(index_pattern)
-                    ---@diagnostic disable-next-line: param-type-mismatch
                     or line_status:sub(2, 2):match(working_tree_pattern)
                 then
                     count = count - 1
@@ -137,15 +144,18 @@ function M.stage_selected()
             paths_string = paths_string .. "    - " .. name .. "\n"
         end
 
-        if
-            type(config.options.confirm_git_operations) == "function"
+        local confirm_enabled = type(config.options.confirm_git_operations) == "function"
                 and config.options.confirm_git_operations(paths)
             or config.options.confirm_git_operations
-        then
-            if
-                not config.options.skip_confirm_for_simple_git_operations
-                or #paths > config.options.simple_git_operations.max_stages
-            then
+        ---@cast confirm_enabled boolean
+
+        if confirm_enabled then
+            local is_simple_git_operation = #paths
+                <= config.options.simple_git_operations.max_stages
+            local confirm_simple_enabled = not config.options.skip_confirm_for_simple_git_operations
+            local should_confirm = confirm_simple_enabled or not is_simple_git_operation
+
+            if should_confirm then
                 if
                     vim.fn.confirm("Stage the following items?:\n" .. paths_string, "&Yes\n&No", 2)
                     ~= 1
@@ -207,15 +217,18 @@ function M.unstage_selected()
             paths_string = paths_string .. "    - " .. name .. "\n"
         end
 
-        if
-            type(config.options.confirm_git_operations) == "function"
+        local confirm_enabled = type(config.options.confirm_git_operations) == "function"
                 and config.options.confirm_git_operations(paths)
             or config.options.confirm_git_operations
-        then
-            if
-                not config.options.skip_confirm_for_simple_git_operations
-                or #paths > config.options.simple_git_operations.max_stages
-            then
+        ---@cast confirm_enabled boolean
+
+        if confirm_enabled then
+            local is_simple_git_operation = #paths
+                <= config.options.simple_git_operations.max_stages
+            local confirm_simple_enabled = not config.options.skip_confirm_for_simple_git_operations
+            local should_confirm = confirm_simple_enabled or not is_simple_git_operation
+
+            if should_confirm then
                 if
                     vim.fn.confirm(
                         "Unstage the following items?:\n" .. paths_string,
@@ -264,15 +277,14 @@ function M.refresh_git_status(repo_root_path)
         local buf = vim.api.nvim_get_current_buf()
         local buf_name = vim.api.nvim_buf_get_name(buf)
         local _, oil_dir = oil_utils.parse_url(buf_name)
+
         repo_root_path = git.get_root(assert(oil_dir))
     end
 
     vim.schedule(function()
         vim.api.nvim_exec_autocmds("User", {
             pattern = "OilGitSignsQueryGitStatus",
-            data = {
-                repo_root_path = repo_root_path,
-            },
+            data = { repo_root_path = repo_root_path },
         })
     end)
 end
