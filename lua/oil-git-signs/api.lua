@@ -1,6 +1,7 @@
 local M = {}
 
 local config = require("oil-git-signs.config")
+local extmarks = require("oil-git-signs.extmarks")
 local git = require("oil-git-signs.git")
 local utils = require("oil-git-signs.utils")
 
@@ -78,15 +79,14 @@ function M.jump_to_status(direction, count, statuses)
     -- count must be positive in order to be used to the determine how many statuses we need to visit
     count = math.abs(count)
 
-    local jump_list = vim.b[buf].oil_git_signs_jump_list ---@type oil_git_signs.JumpList?
+    local jump_list = extmarks.BufferJumpLists[buf]
 
     -- ensure the jump_list is valid in the buffer before jumping (i.e. not out of sync)
-    if jump_list ~= nil and #jump_list == buf_len then
+    if jump_list ~= nil then
         for lnum = start, stop, step do
             local line_status = jump_list[lnum]
 
-            if line_status ~= vim.NIL then
-                ---@cast line_status string
+            if line_status ~= nil then
                 if
                     line_status:sub(1, 1):match(index_pattern)
                     or line_status:sub(2, 2):match(working_tree_pattern)

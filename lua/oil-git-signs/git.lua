@@ -37,7 +37,7 @@ M.AllStatuses = vim.iter(M.GitStatus)
 ---@field index { added: integer, removed: integer, modified: integer }
 ---@field working_tree { added: integer, removed: integer, modified: integer }
 
----@alias oil_git_signs.JumpList (string|vim.NIL)[]
+---@alias oil_git_signs.JumpList (string|nil)[]
 
 ---@alias oil_git_signs.RepoStatusCache table<string, oil_git_signs.RepoStatus?>>
 ---@alias oil_git_signs.RepoStatus { summary: oil_git_signs.StatusSummary, status: table<string, oil_git_signs.EntryStatus?> }

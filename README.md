@@ -633,17 +633,6 @@ vim.b.oil_git_signs_summary: {
 }
 ```
 
-#### vim.b.oil_git_signs_jump_list
-##### Description
-This is a **readonly** array which maps the one indexed line number of each line in an oil buffer to
-the git status of that object. Each line will either give a string of length two where the first
-character is the index status and the second character is the working tree status, or `vim.NIL`.
-
-##### Type
-```
-vim.b.oil_git_signs_jump_list: (string|vim.NIL)[]
-```
-
 ## Highlights
 These are the default highlight and icons configurations which can all be customized. 
 See [Options](#options).
@@ -684,5 +673,3 @@ When creating an issue please include the following:
 ## Contributing
 If you have any ideas for features or improvements for this plugin feel free to open an issue or
 pull request. I will definitely look at adding it.
-
-
