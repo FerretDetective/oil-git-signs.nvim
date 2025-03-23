@@ -27,18 +27,17 @@ function M.jump_to_status(direction, count, statuses)
     end
 
     count = count or 1
-    ---@type { index: oil_git_signs.GitStatus[], working_tree: oil_git_signs.GitStatus[] }
     statuses = statuses or { index = git.AllStatuses, working_tree = git.AllStatuses }
 
     -- the strings are used to match against each status as `vim.tbl_contains` is more expensive
     local index_pattern = "^$"
     if #statuses.index > 0 then
-        index_pattern = "[" .. table.concat(statuses.index, "") .. "]"
+        index_pattern = ("[%s]"):format(table.concat(statuses.index))
     end
 
     local working_tree_pattern = "^$"
     if #statuses.working_tree > 0 then
-        working_tree_pattern = "[" .. table.concat(statuses.working_tree, "") .. "]"
+        working_tree_pattern = ("[%s]"):format(table.concat(statuses.working_tree))
     end
 
     local buf = vim.api.nvim_get_current_buf()
@@ -118,20 +117,20 @@ function M.stage_selected()
     end
 
     -- Exit visual mode before scheduling to prevent conflicts or hanging when using `confirm()`
-    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "n", false)
+    utils.feedkeys("<Esc>")
 
     vim.schedule(function()
-        local buf = vim.api.nvim_get_current_buf()
         local oil = require("oil")
-        local cwd = assert(oil.get_current_dir(buf))
+
+        local buf = vim.api.nvim_get_current_buf()
+        local cwd = assert(oil.get_current_dir(buf), "failed to get the oil cwd")
 
         local paths = {} ---@type string[]
-        local paths_string = "" ---@type string
         for lnum = start, stop do
             local entry = oil.get_entry_on_line(buf, lnum)
 
             if entry == nil then
-                utils.error(string.format("failed to parse entry on line %d", lnum))
+                utils.error(("failed to parse entry on line %d"):format(lnum))
                 return
             end
 
@@ -141,31 +140,34 @@ function M.stage_selected()
             end
 
             table.insert(paths, cwd .. name)
-            paths_string = paths_string .. "    - " .. name .. "\n"
         end
 
-        local confirm_enabled = type(config.options.confirm_git_operations) == "function"
-                and config.options.confirm_git_operations(paths)
-            or config.options.confirm_git_operations
-        ---@cast confirm_enabled boolean
+        local confirm_enabled = config.options.confirm_git_operations
+        if type(confirm_enabled) == "function" then
+            confirm_enabled = confirm_enabled(paths)
+        end
 
         if confirm_enabled then
-            local is_simple_git_operation = #paths
-                <= config.options.simple_git_operations.max_stages
-            local confirm_simple_enabled = not config.options.skip_confirm_for_simple_git_operations
-            local should_confirm = confirm_simple_enabled or not is_simple_git_operation
+            local is_simple_operation = #paths <= config.options.simple_git_operations.max_stages
+            local skip_simple_operation = config.options.skip_confirm_for_simple_git_operations
 
-            if should_confirm then
+            if not is_simple_operation or not skip_simple_operation then
+                local items = vim.iter(paths)
+                    :map(function(path)
+                        return ("    - %s"):format(vim.fs.basename(path))
+                    end)
+                    :join("\n")
+
                 if
-                    vim.fn.confirm("Stage the following items?:\n" .. paths_string, "&Yes\n&No", 2)
-                    ~= 1
+                    vim.fn.confirm("Stage the following items?:\n" .. items, "&Yes\n&No", 2) ~= 1
                 then
                     return
                 end
             end
         end
 
-        git.stage_files(paths, assert(git.get_root(cwd)), function(out)
+        local git_root = assert(git.get_root(cwd), "failed to get git root")
+        git.stage_files(paths, git_root, function(out)
             if out.code ~= 0 then
                 if out.stderr ~= nil then
                     utils.error("failed to stage selected items:\n" .. out.stderr)
@@ -191,20 +193,20 @@ function M.unstage_selected()
     end
 
     -- Exit visual mode before scheduling to prevent conflicts or hanging when using `confirm()`
-    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "n", false)
+    utils.feedkeys("<Esc>")
 
     vim.schedule(function()
-        local buf = vim.api.nvim_get_current_buf()
         local oil = require("oil")
-        local cwd = assert(oil.get_current_dir(buf))
+
+        local buf = vim.api.nvim_get_current_buf()
+        local cwd = assert(oil.get_current_dir(buf), "failed to get the oil cwd")
 
         local paths = {} ---@type string[]
-        local paths_string = "" ---@type string
         for lnum = start, stop do
             local entry = oil.get_entry_on_line(buf, lnum)
 
             if entry == nil then
-                utils.error(string.format("failed to parse entry on line %d", lnum))
+                utils.error(("failed to parse entry on line %d"):format(lnum))
                 return
             end
 
@@ -214,34 +216,34 @@ function M.unstage_selected()
             end
 
             table.insert(paths, cwd .. name)
-            paths_string = paths_string .. "    - " .. name .. "\n"
         end
 
-        local confirm_enabled = type(config.options.confirm_git_operations) == "function"
-                and config.options.confirm_git_operations(paths)
-            or config.options.confirm_git_operations
-        ---@cast confirm_enabled boolean
+        local confirm_enabled = config.options.confirm_git_operations
+        if type(confirm_enabled) == "function" then
+            confirm_enabled = confirm_enabled(paths)
+        end
 
         if confirm_enabled then
-            local is_simple_git_operation = #paths
-                <= config.options.simple_git_operations.max_stages
-            local confirm_simple_enabled = not config.options.skip_confirm_for_simple_git_operations
-            local should_confirm = confirm_simple_enabled or not is_simple_git_operation
+            local is_simple_operation = #paths <= config.options.simple_git_operations.max_stages
+            local skip_simple_operation = config.options.skip_confirm_for_simple_git_operations
 
-            if should_confirm then
+            if not is_simple_operation or not skip_simple_operation then
+                local items = vim.iter(paths)
+                    :map(function(path)
+                        return ("    - %s"):format(vim.fs.basename(path))
+                    end)
+                    :join("\n")
+
                 if
-                    vim.fn.confirm(
-                        "Unstage the following items?:\n" .. paths_string,
-                        "&Yes\n&No",
-                        2
-                    ) ~= 1
+                    vim.fn.confirm("Unstage the following items?:\n" .. items, "&Yes\n&No", 2) ~= 1
                 then
                     return
                 end
             end
         end
 
-        git.unstage_files(paths, assert(git.get_root(cwd)), function(out)
+        local git_root = assert(git.get_root(cwd), "failed to get git root")
+        git.unstage_files(paths, git_root, function(out)
             if out.code ~= 0 then
                 if out.stderr ~= nil then
                     utils.error("failed to unstage selected items:\n" .. out.stderr)
@@ -270,15 +272,16 @@ end
 function M.refresh_git_status(repo_root_path)
     if repo_root_path == nil then
         if vim.bo.filetype ~= "oil" then
-            utils.error("no repo_root was given and it could not be inferred from the current buf")
+            utils.error("repo_root_path is missing, and it cannot be inferred for a non-oil buffer")
             return
         end
 
         local buf = vim.api.nvim_get_current_buf()
         local buf_name = vim.api.nvim_buf_get_name(buf)
         local _, oil_dir = oil_utils.parse_url(buf_name)
+        assert(oil_dir, "failed to parse oil url")
 
-        repo_root_path = git.get_root(assert(oil_dir))
+        repo_root_path = git.get_root(oil_dir)
     end
 
     vim.schedule(function()

@@ -53,14 +53,7 @@ local function set_autocmds(evt)
     end
 
     vim.b[buf].oil_git_signs_exists = true
-
-    local repo_attached_count = RepoAttachedCount[repo_root]
-    if repo_attached_count == nil then
-        repo_attached_count = 1
-    else
-        repo_attached_count = repo_attached_count + 1
-    end
-    RepoAttachedCount[repo_root] = repo_attached_count
+    RepoAttachedCount[repo_root] = (RepoAttachedCount[repo_root] or 0) + 1
 
     for _, keymap in ipairs(M.options.keymaps) do
         keymap[4] = vim.tbl_deep_extend("force", keymap[4] or {}, { buffer = buf })
@@ -120,7 +113,7 @@ local function set_autocmds(evt)
             callback = function(event)
                 local buf_name = vim.api.nvim_buf_get_name(event.buf)
                 local _, event_path = require("oil.util").parse_url(buf_name)
-                local event_root = git.get_root(assert(event_path))
+                local event_root = git.get_root(assert(event_path, "could not parse oil url"))
 
                 if event_root ~= repo_root then
                     return
@@ -133,8 +126,8 @@ local function set_autocmds(evt)
 
     -- make sure to clean up auto commands when oil deletes the buffer
     vim.api.nvim_create_autocmd("BufWipeout", {
-        buffer = buf,
         desc = "cleanup oil-git-signs autocmds when oil unloads the buf",
+        buffer = buf,
         once = true,
         callback = vim.schedule_wrap(function()
             pcall(vim.api.nvim_del_augroup_by_name, utils.buf_get_augroup_name(buf))
@@ -144,7 +137,9 @@ local function set_autocmds(evt)
             --- no other clients are active in this repo
             if ref_count <= 0 then
                 pcall(vim.api.nvim_del_augroup_by_name, utils.repo_get_augroup_name(repo_root))
-                assert(RepoWatcherExists[repo_root]):stop()
+                git.RepoStatusCache[repo_root] = nil
+
+                assert(RepoWatcherExists[repo_root], "FSWatcher is missing"):stop()
                 RepoWatcherExists[repo_root] = nil
                 git.RepoStatusCache[repo_root] = nil
             end
