@@ -21,7 +21,7 @@ function M.lazy_require(modname)
     })
 end
 
----Return start and stop line numbers of the current visual selection, 
+---Return start and stop line numbers of the current visual selection,
 ---or the current cursor position when not in visual mode.
 ---@return integer
 ---@return integer
@@ -115,6 +115,13 @@ function M.memoize(fn, cache)
 
         return result
     end
+end
+
+---Wrapper around `nvim_feedkeys` calling `nvim_replace_termcodes` first
+---@param keys any
+---@param mode any
+function M.feedkeys(keys, mode)
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(keys, true, false, true), mode or "n", false)
 end
 
 local OS_SEP = jit.os:find("Window") and "\\" or "/"
