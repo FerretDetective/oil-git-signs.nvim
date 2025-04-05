@@ -87,6 +87,12 @@ local function set_autocmds(evt)
 
                 git.query_git_status(repo_root, function(status, summary)
                     git.RepoStatusCache[repo_root] = { status = status, summary = summary }
+                    vim.schedule(function()
+                        vim.api.nvim_exec_autocmds(
+                            "User",
+                            { pattern = "OilGitSignsQueryGitStatusDone" }
+                        )
+                    end)
                 end)
             end,
         })
@@ -123,6 +129,16 @@ local function set_autocmds(evt)
             end,
         })
     end
+
+    vim.api.nvim_create_autocmd("User", {
+        pattern = "OilGitSignsQueryGitStatusDone",
+        ---@param e oil_git_signs.AutoCmdEvent
+        callback = function(e)
+            if e.buf == buf then
+                vim.cmd("redraw!")
+            end
+        end,
+    })
 
     -- make sure to clean up auto commands when oil deletes the buffer
     vim.api.nvim_create_autocmd("BufWipeout", {
