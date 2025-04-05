@@ -34,7 +34,17 @@ function M.init_extmark_provider(namespace)
             local entry_path = oil_cwd .. entry.name
             local repo_root = git.get_root(oil_cwd)
 
-            local status = git.RepoStatusCache[repo_root].status[entry_path]
+            if repo_root == nil then
+                return
+            end
+
+            local repo_cache = git.RepoStatusCache[repo_root]
+
+            if repo_cache == nil then
+                return
+            end
+
+            local status = repo_cache.status[entry_path]
 
             if status == nil then
                 return
