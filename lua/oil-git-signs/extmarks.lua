@@ -47,7 +47,6 @@ function M.init_extmark_provider(namespace)
                     local working_tree_display = config.options.working_tree[status.working_tree]
 
                     vim.api.nvim_buf_set_extmark(bufnr, buf_ns, row, 0, {
-                        invalidate = true,
                         sign_text = working_tree_display.icon,
                         sign_hl_group = working_tree_display.hl_group,
                     })
@@ -57,7 +56,6 @@ function M.init_extmark_provider(namespace)
                     local index_display = config.options.index[status.index]
 
                     vim.api.nvim_buf_set_extmark(bufnr, buf_ns, row, 0, {
-                        invalidate = true,
                         sign_text = index_display.icon,
                         sign_hl_group = index_display.hl_group,
                     })
@@ -67,7 +65,6 @@ function M.init_extmark_provider(namespace)
                     local index_display = config.options.index[status.index]
 
                     vim.api.nvim_buf_set_extmark(bufnr, buf_ns, row, 0, {
-                        invalidate = true,
                         sign_text = index_display.icon,
                         sign_hl_group = index_display.hl_group,
                     })
@@ -77,7 +74,6 @@ function M.init_extmark_provider(namespace)
                     local working_tree_display = config.options.working_tree[status.working_tree]
 
                     vim.api.nvim_buf_set_extmark(bufnr, buf_ns, row, 0, {
-                        invalidate = true,
                         sign_text = working_tree_display.icon,
                         sign_hl_group = working_tree_display.hl_group,
                     })
