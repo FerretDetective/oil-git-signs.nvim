@@ -37,10 +37,11 @@ M.AllStatuses = vim.iter(M.GitStatus)
 ---@field index { added: integer, removed: integer, modified: integer }
 ---@field working_tree { added: integer, removed: integer, modified: integer }
 
----@alias oil_git_signs.JumpList (string|vim.NIL)[]
+---@class oil_git_signs.RepoStatus
+---@field summary oil_git_signs.StatusSummary
+---@field status table<string, oil_git_signs.EntryStatus?>
 
----@alias oil_git_signs.RepoStatusCache table<string, oil_git_signs.RepoStatus?>>
----@alias oil_git_signs.RepoStatus { summary: oil_git_signs.StatusSummary, status: table<string, oil_git_signs.EntryStatus?> }
+---@alias oil_git_signs.RepoStatusCache table<string, oil_git_signs.RepoStatus?>
 
 ---Table that maps a full path to a repo root (parent dir of .git) to a table that maps a full path of a file to a EntryStatus
 ---@type oil_git_signs.RepoStatusCache

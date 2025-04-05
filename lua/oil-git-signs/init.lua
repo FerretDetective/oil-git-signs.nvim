@@ -60,9 +60,6 @@ local function set_autocmds(evt)
         vim.keymap.set(unpack(keymap))
     end
 
-    local namespace = utils.buf_get_namespace(buf)
-    local augroup = utils.buf_get_augroup(buf)
-
     -- only create one set of watcher/autocmd per repo
     if not RepoWatcherExists[repo_root] then
         local repo_watcher_augroup = utils.repo_get_augroup(repo_root)
@@ -90,11 +87,10 @@ local function set_autocmds(evt)
 
                 git.query_git_status(repo_root, function(status, summary)
                     git.RepoStatusCache[repo_root] = { status = status, summary = summary }
-
                     vim.schedule(function()
                         vim.api.nvim_exec_autocmds(
                             "User",
-                            { pattern = "OilGitSignsRefreshExtmarks" }
+                            { pattern = "OilGitSignsQueryGitStatusDone" }
                         )
                     end)
                 end)
@@ -134,43 +130,15 @@ local function set_autocmds(evt)
         })
     end
 
-    ---@param event oil_git_signs.AutoCmdEvent
-    local refresh_extmarks = vim.schedule_wrap(function(event)
-        if vim.bo[event.buf].filetype ~= "oil" then
-            return
-        end
-
-        local status = git.RepoStatusCache[repo_root]
-        if status == nil then
-            return
-        end
-
-        extmarks.update_status_ext_marks(
-            status.status,
-            buf,
-            namespace,
-            1,
-            vim.api.nvim_buf_line_count(buf)
-        )
-        vim.b[buf].oil_git_signs_summary = status.summary
-    end)
-
-    -- update extmarks when we are requested or when we enter a new buffer
     vim.api.nvim_create_autocmd("User", {
-        pattern = { "OilGitSignsRefreshExtmarks" },
-        desc = "update oil git signs extmarks",
-        group = augroup,
-        callback = refresh_extmarks,
-    })
-    vim.api.nvim_create_autocmd("BufModifiedSet", {
-        desc = "update oil git signs extmarks",
-        buffer = buf,
-        group = augroup,
-        callback = utils.apply_debounce(function()
-            if not vim.bo.modified then
-                vim.api.nvim_exec_autocmds("User", { pattern = "OilGitSignsRefreshExtmarks" })
+        pattern = "OilGitSignsQueryGitStatusDone",
+        ---@param e oil_git_signs.AutoCmdEvent
+        callback = function(e)
+            if e.buf == buf then
+                vim.cmd("redraw!")
+                vim.b.oil_git_signs_summary = git.RepoStatusCache[repo_root].summary
             end
-        end, 25),
+        end,
     })
 
     -- make sure to clean up auto commands when oil deletes the buffer
@@ -190,6 +158,7 @@ local function set_autocmds(evt)
 
                 assert(RepoWatcherExists[repo_root], "FSWatcher is missing"):stop()
                 RepoWatcherExists[repo_root] = nil
+                git.RepoStatusCache[repo_root] = nil
             end
         end),
     })
@@ -253,6 +222,7 @@ function M.setup(opts)
         group = vim.api.nvim_create_augroup("OilGitSigns", {}),
         callback = set_autocmds,
     })
+    extmarks.init_extmark_provider(vim.api.nvim_create_namespace("OilGitSignsDecorationsProvider"))
 end
 
 return M

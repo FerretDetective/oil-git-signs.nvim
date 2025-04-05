@@ -4,6 +4,7 @@ local config = require("oil-git-signs.config")
 local git = require("oil-git-signs.git")
 local utils = require("oil-git-signs.utils")
 
+local oil = require("oil")
 local oil_utils = require("oil.util")
 
 ---Navigate the cursor to an entry with a given status.
@@ -28,45 +29,34 @@ function M.jump_to_status(direction, count, statuses)
     count = count or 1
     statuses = statuses or { index = git.AllStatuses, working_tree = git.AllStatuses }
 
-    -- the strings are used to match against each status as `vim.tbl_contains` is more expensive
-    local index_pattern = "^$"
-    if #statuses.index > 0 then
-        index_pattern = ("[%s]"):format(table.concat(statuses.index))
-    end
-
-    local working_tree_pattern = "^$"
-    if #statuses.working_tree > 0 then
-        working_tree_pattern = ("[%s]"):format(table.concat(statuses.working_tree))
-    end
-
     local buf = vim.api.nvim_get_current_buf()
     local win = vim.api.nvim_get_current_win()
     local buf_len = vim.api.nvim_buf_line_count(buf)
-    local cursor_row = vim.api.nvim_win_get_cursor(win)[1]
+    local cursor_lnum = vim.api.nvim_win_get_cursor(win)[1]
 
     local start, stop, step
     if direction == "down" then
         if count > 0 then
             -- start at the cursor and move down
-            start = cursor_row + 1
+            start = cursor_lnum + 1
             stop = buf_len
             step = 1
         else
             -- start at the end and move up (e.g. getting the last status)
             start = buf_len
-            stop = cursor_row
+            stop = cursor_lnum
             step = -1
         end
     elseif direction == "up" then
         if count > 0 then
             -- start at the cursor and move up
-            start = cursor_row - 1
+            start = cursor_lnum - 1
             stop = 1
             step = -1
         else
             -- start at the top and move down (e.g. getting the first status)
             start = 1
-            stop = cursor_row
+            stop = cursor_lnum
             step = 1
         end
     else
@@ -74,29 +64,36 @@ function M.jump_to_status(direction, count, statuses)
         return
     end
 
+    local buf_name = vim.api.nvim_buf_get_name(buf)
+    local _, oil_dir = oil_utils.parse_url(buf_name)
+    assert(oil_dir, "failed to parse oil url")
+    local repo_root = assert(git.get_root(oil_dir), "failed to get repo root")
+    local repo_status = assert(git.RepoStatusCache[repo_root], "failed to get repo status").status
+
     -- count must be positive in order to be used to the determine how many statuses we need to visit
     count = math.abs(count)
 
-    local jump_list = vim.b[buf].oil_git_signs_jump_list ---@type oil_git_signs.JumpList?
+    for lnum = start, stop, step do
+        local entry = oil.get_entry_on_line(buf, lnum)
 
-    -- ensure the jump_list is valid in the buffer before jumping (i.e. not out of sync)
-    if jump_list ~= nil and #jump_list == buf_len then
-        for lnum = start, stop, step do
-            local line_status = jump_list[lnum]
+        if not entry then
+            utils.error(("failed to parse entry: lnum=%d"):format(lnum))
+            return
+        end
 
-            if line_status ~= vim.NIL then
-                ---@cast line_status string
-                if
-                    line_status:sub(1, 1):match(index_pattern)
-                    or line_status:sub(2, 2):match(working_tree_pattern)
-                then
-                    count = count - 1
-                end
+        local entry_status = repo_status[oil_dir .. entry.name]
 
-                if count == 0 then
-                    vim.api.nvim_win_set_cursor(win, { lnum, 0 })
-                    return
-                end
+        if entry_status ~= nil then
+            if
+                vim.tbl_contains(statuses.index, entry_status.index)
+                or vim.tbl_contains(statuses.working_tree, entry_status.working_tree)
+            then
+                count = count - 1
+            end
+
+            if count == 0 then
+                vim.api.nvim_win_set_cursor(win, { lnum, 0 })
+                return
             end
         end
     end
@@ -120,8 +117,6 @@ function M.stage_selected()
     utils.feedkeys("<Esc>")
 
     vim.schedule(function()
-        local oil = require("oil")
-
         local buf = vim.api.nvim_get_current_buf()
         local cwd = assert(oil.get_current_dir(buf), "failed to get the oil cwd")
 
@@ -196,8 +191,6 @@ function M.unstage_selected()
     utils.feedkeys("<Esc>")
 
     vim.schedule(function()
-        local oil = require("oil")
-
         local buf = vim.api.nvim_get_current_buf()
         local cwd = assert(oil.get_current_dir(buf), "failed to get the oil cwd")
 
