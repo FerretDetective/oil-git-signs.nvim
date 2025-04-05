@@ -24,7 +24,7 @@ Add git information about your files when working with [oil.nvim](https://github
 - Very low impact on performance due to asynchronous processing.
 
 ## Requirements
-- Neovim 0.10+
+- Neovim 0.10+ (0.11+ recommended)
 - oil.nvim
 - Git
 
@@ -343,7 +343,7 @@ The following is an example configuration which makes use of this component.
         Fixes issues that occur when hiding files that are ignored by git.
     </summary>
 
-This fixes issues integrating this plugin when using 
+This fixes issues integrating this plugin when using
 '[Hide gitignored files and show git tracked hidden
 files](https://github.com/stevearc/oil.nvim/blob/master/doc/recipes.md#hide-gitignored-files-and-show-git-tracked-hidden-files)'.
 
@@ -620,13 +620,13 @@ your status line. See [Lualine Integration](#lualine-integration) for an example
 ##### Type
 ```
 vim.b.oil_git_signs_summary: {
-    working_tree = { 
-        added: integer, 
+    working_tree = {
+        added: integer,
         removed: integer,
         modified: integer,
     },
-    index = { 
-        added: integer, 
+    index = {
+        added: integer,
         removed: integer,
         modified: integer,
     },
@@ -634,7 +634,7 @@ vim.b.oil_git_signs_summary: {
 ```
 
 ## Highlights
-These are the default highlight and icons configurations which can all be customized. 
+These are the default highlight and icons configurations which can all be customized.
 See [Options](#options).
 
 | Default Icon    | Default Link  | Index Highlight Group            | Working Tree Highlight Group           |
@@ -667,7 +667,7 @@ When creating an issue please include the following:
 - oil.nvim version/commit (check your package manager)
 - git version (`git --version`)
 - neovim version (`nvim --version`)
-- a `repro.lua` and any neccessary steps to reproduce the issue (**optional**, see 
+- a `repro.lua` and any neccessary steps to reproduce the issue (**optional**, see
 [lazy.nvim repro.lua](https://lazy.folke.io/developers#reprolua))
 
 ## Contributing
