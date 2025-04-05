@@ -127,7 +127,7 @@ function M.query_git_status(repo_root, on_completetion)
 
     -- could use `--porcelain` here for guaranteed compatibility, but parsing it is more diffciult
     -- due to it not being reported as a path relative the the cwd
-    local cmd = { "git", "-c", "status.relativePaths=false", "status", "--short" }
+    local cmd = vim.deepcopy(config.options.git_shell_cmd)
 
     if config.options.show_ignored(repo_root) then
         table.insert(cmd, "--ignored")

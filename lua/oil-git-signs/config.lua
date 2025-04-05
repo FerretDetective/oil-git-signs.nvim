@@ -57,6 +57,9 @@ M.defaults = {
     show_ignored = function()
         return true
     end,
+    -- used to control the default command used to invoke git
+    ---@type string[]
+    git_shell_cmd = { "git", "-c", "status.relativePaths=false", "status", "--short" },
     -- used to customize how ext marks are displayed for statuses in the index
     ---@type table<oil_git_signs.GitStatus, oil_git_signs.DisplayOption>
     index = {

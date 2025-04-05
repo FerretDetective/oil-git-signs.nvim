@@ -106,6 +106,9 @@ local defaults = {
     show_ignored = function()
         return true
     end,
+    -- used to control the default command used to invoke git
+    ---@type string[]
+    git_shell_cmd = { "git", "-c", "status.relativePaths=false", "status", "--short" },
     -- used to customize how ext marks are displayed for statuses in the index
     ---@type table<oil_git_signs.GitStatus, oil_git_signs.DisplayOption>
     index = {
@@ -561,6 +564,7 @@ ogs.Config: {
     show_index: function(entry_name: string, index_status: ogs.GitStatus): boolean,
     show_working_tree: function(entry_name: string, index_status: ogs.GitStatus): boolean,
     show_ignored: function(oil_dir: string): boolean,
+    git_shell_cmd: string[],
     index: table<ogs.GitStatus, { icon: string, hl_group: string }>,
     working_tree: table<ogs.GitStatus, { icon: string, hl_group: string }>,
     status_priority: table<ogs.GitStatus, integer>,
@@ -583,6 +587,7 @@ ogs.Config: {
     show_index: function(entry_name: string, index_status: ogs.GitStatus): boolean,
     show_working_tree: function(entry_name: string, index_status: ogs.GitStatus): boolean,
     show_ignored: function(oil_dir: string): boolean,
+    git_shell_cmd: string[],
     index: table<ogs.GitStatus, { icon: string, hl_group: string }>,
     working_tree: table<ogs.GitStatus, { icon: string, hl_group: string }>,
     status_priority: table<ogs.GitStatus, integer>,
