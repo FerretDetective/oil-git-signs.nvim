@@ -136,6 +136,7 @@ local function set_autocmds(evt)
         callback = function(e)
             if e.buf == buf then
                 vim.cmd("redraw!")
+                vim.b.oil_git_signs_summary = git.RepoStatusCache[repo_root].summary
             end
         end,
     })
