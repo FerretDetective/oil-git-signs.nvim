@@ -4,10 +4,6 @@ local config = require("oil-git-signs.config")
 local git = require("oil-git-signs.git")
 local utils = require("oil-git-signs.utils")
 
----Table mapping a bufnr to the buffer's jump list
----@type table<integer, oil_git_signs.JumpList?>
-M.BufferJumpLists = {}
-
 ---Create the singular decorations provider for all oil_git_signs buffers
 ---@param namespace integer
 function M.init_extmark_provider(namespace)
@@ -67,9 +63,6 @@ function M.init_extmark_provider(namespace)
                     priority = 1,
                 })
             end
-
-            --TODO: this only allows jumping to statuses that have been loaded in the current view
-            M.BufferJumpLists[bufnr][lnum] = status and status.index .. status.working_tree or nil
         end,
     })
 end

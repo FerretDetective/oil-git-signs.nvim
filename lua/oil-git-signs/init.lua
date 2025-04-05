@@ -146,8 +146,6 @@ local function set_autocmds(evt)
         end),
     })
 
-    extmarks.BufferJumpLists[buf] = {}
-
     -- query the initial status
     api.refresh_git_status(repo_root)
 end
