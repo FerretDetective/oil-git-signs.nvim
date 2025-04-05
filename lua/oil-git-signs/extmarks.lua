@@ -42,26 +42,46 @@ function M.init_extmark_provider(namespace)
 
             local buf_ns = utils.buf_get_namespace(bufnr)
 
-            if config.options.show_index(entry.name, status.index) then
-                local index_display = config.options.index[status.index]
+            if vim.fn.has("nvim-0.11") == 1 then
+                if config.options.show_working_tree(entry.name, status.working_tree) then
+                    local working_tree_display = config.options.working_tree[status.working_tree]
 
-                vim.api.nvim_buf_set_extmark(bufnr, buf_ns, row, 0, {
-                    invalidate = true,
-                    sign_text = index_display.icon,
-                    sign_hl_group = index_display.hl_group,
-                    priority = 1,
-                })
-            end
+                    vim.api.nvim_buf_set_extmark(bufnr, buf_ns, row, 0, {
+                        invalidate = true,
+                        sign_text = working_tree_display.icon,
+                        sign_hl_group = working_tree_display.hl_group,
+                    })
+                end
 
-            if config.options.show_working_tree(entry.name, status.working_tree) then
-                local working_tree_display = config.options.working_tree[status.working_tree]
+                if config.options.show_index(entry.name, status.index) then
+                    local index_display = config.options.index[status.index]
 
-                vim.api.nvim_buf_set_extmark(bufnr, buf_ns, row, 1, {
-                    invalidate = true,
-                    sign_text = working_tree_display.icon,
-                    sign_hl_group = working_tree_display.hl_group,
-                    priority = 1,
-                })
+                    vim.api.nvim_buf_set_extmark(bufnr, buf_ns, row, 0, {
+                        invalidate = true,
+                        sign_text = index_display.icon,
+                        sign_hl_group = index_display.hl_group,
+                    })
+                end
+            else
+                if config.options.show_index(entry.name, status.index) then
+                    local index_display = config.options.index[status.index]
+
+                    vim.api.nvim_buf_set_extmark(bufnr, buf_ns, row, 0, {
+                        invalidate = true,
+                        sign_text = index_display.icon,
+                        sign_hl_group = index_display.hl_group,
+                    })
+                end
+
+                if config.options.show_working_tree(entry.name, status.working_tree) then
+                    local working_tree_display = config.options.working_tree[status.working_tree]
+
+                    vim.api.nvim_buf_set_extmark(bufnr, buf_ns, row, 0, {
+                        invalidate = true,
+                        sign_text = working_tree_display.icon,
+                        sign_hl_group = working_tree_display.hl_group,
+                    })
+                end
             end
         end,
     })
