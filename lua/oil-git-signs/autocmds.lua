@@ -59,16 +59,16 @@ function M.buf_init_autocmds(evt)
         pattern = "OilGitSignsQueryGitStatusDone",
         ---@param event oil_git_signs.AutoCmdEvent
         callback = function(event)
-            local buf_name = vim.api.nvim_buf_get_name(event.buf)
-            local _, event_path = oil_util.parse_url(buf_name)
-            local event_root = git.get_root(assert(event_path, "could not parse oil url"))
-
-            if event_root ~= repo_root or event.buf ~= buf then
+            if event.data["repo_root_path"] ~= repo_root or event.buf ~= buf then
                 return
             end
 
             vim.cmd("redraw!")
-            vim.b[buf].oil_git_signs_summary = git.RepoStatusCache[repo_root].summary
+
+            local repo_status = git.RepoStatusCache[repo_root]
+            if repo_status then
+                vim.b[buf].oil_git_signs_summary = repo_status.summary
+            end
         end,
     })
 
@@ -124,10 +124,10 @@ function M.buf_init_autocmds(evt)
                 git.query_git_status(repo_root, function(status, summary)
                     git.RepoStatusCache[repo_root] = { status = status, summary = summary }
                     vim.schedule(function()
-                        vim.api.nvim_exec_autocmds(
-                            "User",
-                            { pattern = "OilGitSignsQueryGitStatusDone" }
-                        )
+                        vim.api.nvim_exec_autocmds("User", {
+                            pattern = "OilGitSignsQueryGitStatusDone",
+                            data = { repo_root_path = repo },
+                        })
                     end)
                 end)
             end,
