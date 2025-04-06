@@ -166,6 +166,8 @@ function M.buf_init_autocmds(evt)
         })
 
         api.refresh_git_status(repo_root)
+    else
+        vim.b[buf].oil_git_signs_summary = git.RepoStatusCache[repo_root].summary
     end
 
     M.RepoAttachedCount[repo_root] = cur_ref_count + 1
