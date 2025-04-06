@@ -20,9 +20,9 @@ local M = {}
 ---@field file string expanded value of `<afile>`
 ---@field data any arbitrary data passed from `vim.api.nvim_exec_autocmds`
 
----Keep track of whether an fs watcher already exists for a given repo
+---Keep track the `FSWatcher` for each repository
 ---@type table<string, oil_git_signs.FsWatcher?>
-local RepoWatcherExists = {}
+local RepoWatcherList = {}
 
 ---Keep track of the number of attached clients for a given repo
 ---@type table<string, integer?>
@@ -52,16 +52,48 @@ local function set_autocmds(evt)
         return
     end
 
-    vim.b[buf].oil_git_signs_exists = true
-    RepoAttachedCount[repo_root] = (RepoAttachedCount[repo_root] or 0) + 1
-
     for _, keymap in ipairs(M.options.keymaps) do
         keymap[4] = vim.tbl_deep_extend("force", keymap[4] or {}, { buffer = buf })
         vim.keymap.set(unpack(keymap))
     end
 
-    -- only create one set of watcher/autocmd per repo
-    if not RepoWatcherExists[repo_root] then
+    vim.api.nvim_create_autocmd("User", {
+        pattern = "OilGitSignsQueryGitStatusDone",
+        ---@param e oil_git_signs.AutoCmdEvent
+        callback = function(e)
+            if e.buf == buf then
+                vim.cmd("redraw!")
+                vim.b.oil_git_signs_summary = git.RepoStatusCache[repo_root].summary
+            end
+        end,
+    })
+
+    -- make sure to clean up auto commands when oil deletes the buffer
+    vim.api.nvim_create_autocmd("BufWipeout", {
+        desc = "cleanup oil-git-signs autocmds when oil unloads the buf",
+        buffer = buf,
+        once = true,
+        callback = vim.schedule_wrap(function()
+            pcall(vim.api.nvim_del_augroup_by_name, utils.buf_get_augroup_name(buf))
+            local ref_count = math.max(RepoAttachedCount[repo_root] - 1, 0)
+            RepoAttachedCount[repo_root] = ref_count
+
+            --- no other clients are active in this repo
+            if ref_count == 0 then
+                pcall(vim.api.nvim_del_augroup_by_name, utils.repo_get_augroup_name(repo_root))
+                git.RepoStatusCache[repo_root] = nil
+
+                assert(RepoWatcherList[repo_root], "FSWatcher is missing"):stop()
+                RepoWatcherList[repo_root] = nil
+                git.RepoStatusCache[repo_root] = nil
+            end
+        end),
+    })
+
+    local cur_ref_count = RepoAttachedCount[repo_root] or 0
+
+    -- initial setup for first attachment to a repository
+    if cur_ref_count == 0 then
         local repo_watcher_augroup = utils.repo_get_augroup(repo_root)
 
         vim.api.nvim_create_autocmd("User", {
@@ -110,7 +142,7 @@ local function set_autocmds(evt)
             api.refresh_git_status(repo_root)
         end)
         watcher:start()
-        RepoWatcherExists[repo_root] = watcher
+        RepoWatcherList[repo_root] = watcher
 
         vim.api.nvim_create_autocmd("User", {
             pattern = "OilMutationComplete",
@@ -128,43 +160,12 @@ local function set_autocmds(evt)
                 api.refresh_git_status(repo_root)
             end,
         })
+
+        api.refresh_git_status(repo_root)
     end
 
-    vim.api.nvim_create_autocmd("User", {
-        pattern = "OilGitSignsQueryGitStatusDone",
-        ---@param e oil_git_signs.AutoCmdEvent
-        callback = function(e)
-            if e.buf == buf then
-                vim.cmd("redraw!")
-                vim.b.oil_git_signs_summary = git.RepoStatusCache[repo_root].summary
-            end
-        end,
-    })
-
-    -- make sure to clean up auto commands when oil deletes the buffer
-    vim.api.nvim_create_autocmd("BufWipeout", {
-        desc = "cleanup oil-git-signs autocmds when oil unloads the buf",
-        buffer = buf,
-        once = true,
-        callback = vim.schedule_wrap(function()
-            pcall(vim.api.nvim_del_augroup_by_name, utils.buf_get_augroup_name(buf))
-            local ref_count = RepoAttachedCount[repo_root] - 1
-            RepoAttachedCount[repo_root] = ref_count
-
-            --- no other clients are active in this repo
-            if ref_count <= 0 then
-                pcall(vim.api.nvim_del_augroup_by_name, utils.repo_get_augroup_name(repo_root))
-                git.RepoStatusCache[repo_root] = nil
-
-                assert(RepoWatcherExists[repo_root], "FSWatcher is missing"):stop()
-                RepoWatcherExists[repo_root] = nil
-                git.RepoStatusCache[repo_root] = nil
-            end
-        end),
-    })
-
-    -- query the initial status
-    api.refresh_git_status(repo_root)
+    RepoAttachedCount[repo_root] = cur_ref_count + 1
+    vim.b[buf].oil_git_signs_exists = true
 end
 
 ---@param opts oil_git_signs.Config?
