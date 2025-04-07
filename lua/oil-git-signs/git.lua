@@ -96,17 +96,17 @@ local function resolve_collision(existing_status, new_status)
         result = vim.deepcopy(existing_status)
 
         -- resolve index collision
-        local index_score = config.options.status_priority[new_status.index]
+        local new_index_score = config.options.status_priority[new_status.index]
         local existing_index_score = config.options.status_priority[existing_status.index]
-        if index_score > existing_index_score then
+        if new_index_score > existing_index_score then
             result.index = new_status.index
         end
 
         -- resolve working tree collision
-        local working_tree_score = config.options.status_priority[new_status.working_tree]
+        local new_working_tree_score = config.options.status_priority[new_status.working_tree]
         local existing_working_tree_score =
             config.options.status_priority[existing_status.working_tree]
-        if working_tree_score > existing_working_tree_score then
+        if new_working_tree_score > existing_working_tree_score then
             result.working_tree = new_status.working_tree
         end
     end
@@ -125,14 +125,10 @@ function M.query_git_status(repo_root, on_completetion)
         on_completetion(status, summary)
     end
 
-    -- could use `--porcelain` here for guaranteed compatibility, but parsing it is more diffciult
-    -- due to it not being reported as a path relative the the cwd
     local cmd = vim.deepcopy(config.options.git_shell_cmd)
-
     if config.options.show_ignored(repo_root) then
         table.insert(cmd, "--ignored")
     end
-
     table.insert(cmd, repo_root)
 
     M.RepoBeingQueried[repo_root] = true

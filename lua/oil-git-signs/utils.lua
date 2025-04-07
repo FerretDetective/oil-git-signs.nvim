@@ -2,25 +2,6 @@ local M = {}
 
 local unpack = unpack or table.unpack
 
----Import a module lazily such that it won't load until necessary
----@param modname string
-function M.lazy_require(modname)
-    local mod = nil
-
-    return setmetatable({}, {
-        __index = function(_, key)
-            if mod == nil then
-                mod = require(modname)
-            end
-
-            return mod[key]
-        end,
-        __newindex = function(_, key, value)
-            mod[key] = value
-        end,
-    })
-end
-
 ---Return start and stop line numbers of the current visual selection,
 ---or the current cursor position when not in visual mode.
 ---@return integer
