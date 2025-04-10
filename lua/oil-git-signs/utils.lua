@@ -102,7 +102,11 @@ end
 ---@param keys any
 ---@param mode any
 function M.feedkeys(keys, mode)
-    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(keys, true, false, true), mode or "n", false)
+    vim.api.nvim_feedkeys(
+        vim.api.nvim_replace_termcodes(keys, true, false, true),
+        mode or "n",
+        false
+    )
 end
 
 local OS_SEP = jit.os:find("Window") and "\\" or "/"
