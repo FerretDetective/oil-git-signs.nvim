@@ -75,10 +75,10 @@ function M.apply_debounce(fn, time_ms)
 end
 
 ---Wrap a function with a lightweight cache to save results.
----@generic T
----@param fn fun(...: any): T
----@param cache table<any[], T>?
----@return fun(...: any): T
+---@generic T: function
+---@param fn T
+---@param cache table<any[], any[]>?
+---@return T
 function M.memoize(fn, cache)
     cache = cache or {}
 
@@ -87,14 +87,14 @@ function M.memoize(fn, cache)
 
         local cached = cache[args]
         if cached ~= nil then
-            return cached
+            return unpack(cached)
         end
 
-        local result = fn(...)
+        local result = { fn(...) }
 
         cache[args] = result
 
-        return result
+        return unpack(result)
     end
 end
 
