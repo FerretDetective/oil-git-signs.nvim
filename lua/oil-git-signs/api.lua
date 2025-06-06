@@ -9,14 +9,22 @@ local oil_utils = require("oil.util")
 
 ---Navigate the cursor to an entry with a given status.
 ---
+---If `count` < 0, then it will jump to the |`count`|-th last entry, stopping at the cursor unless
+---`wrap` is enabled.
+---
+---If `count` > 0, then it will jump to the `count`-th entry, stopping at the start/end of the
+---buffer unless `wrap` is enabled.
+---
 ---Defaults:
----statuses: all available git statuses are used
----count: 1 is the default count, use -1 to get the last occurence, -2 to get the second last, ...
+---  **count**: `vim.v.count1`
+---  **statuses**: `{ index = git.AllStatuses, working_tree = git.AllStatuses }`
+---  **wrap**: `vim.o.wrapscan`
 ---
 ---@param direction "up"|"down"
----@param count integer?  1 by default
----@param statuses { index: oil_git_signs.GitStatus[], working_tree: oil_git_signs.GitStatus[] }?  all by default
-function M.jump_to_status(direction, count, statuses)
+---@param count integer?
+---@param statuses { index: oil_git_signs.GitStatus[], working_tree: oil_git_signs.GitStatus[] }?
+---@param wrap boolean?
+function M.jump_to_status(direction, count, statuses, wrap)
     if not vim.b.oil_git_signs_exists then
         utils.error("not a git repository")
         return
@@ -26,38 +34,67 @@ function M.jump_to_status(direction, count, statuses)
         return
     end
 
-    count = count or 1
-    statuses = statuses or { index = git.AllStatuses, working_tree = git.AllStatuses }
+    if count == nil then
+        count = vim.v.count1
+    end
+
+    if statuses == nil then
+        statuses = { index = git.AllStatuses, working_tree = git.AllStatuses }
+    end
+
+    if wrap == nil then
+        wrap = vim.o.wrapscan
+    end
 
     local buf = vim.api.nvim_get_current_buf()
     local win = vim.api.nvim_get_current_win()
     local buf_len = vim.api.nvim_buf_line_count(buf)
     local cursor_lnum = vim.api.nvim_win_get_cursor(win)[1]
 
-    local start, stop, step
+    local start, stop, step, wrap_start, wrap_stop, wrap_step
     if direction == "down" then
         if count > 0 then
-            -- start at the cursor and move down
+            -- start at cursor (exclusive) and move down
             start = cursor_lnum + 1
             stop = buf_len
             step = 1
+
+            -- wrap from SOB until cursor (inclusive)
+            wrap_start = 1
+            wrap_stop = start
+            wrap_step = 1
         else
-            -- start at the end and move up (e.g. getting the last status)
+            -- start at EOB and move up (e.g. getting the last status)
             start = buf_len
             stop = cursor_lnum
             step = -1
+
+            -- wrap from cursor (inclusive) until SOB
+            wrap_start = stop
+            wrap_stop = 1
+            wrap_step = -1
         end
     elseif direction == "up" then
         if count > 0 then
-            -- start at the cursor and move up
+            -- start at cursor (exclusive) and move up
             start = cursor_lnum - 1
             stop = 1
             step = -1
+
+            -- wrap from EOB until cursor (inclusive)
+            wrap_start = buf_len
+            wrap_stop = start
+            wrap_step = -1
         else
-            -- start at the top and move down (e.g. getting the first status)
+            -- start at SOB and move down (e.g. getting the first status)
             start = 1
             stop = cursor_lnum
             step = 1
+
+            -- wrap from cursor (inclusive) until EOB
+            wrap_start = stop
+            wrap_stop = buf_len
+            wrap_step = 1
         end
     else
         utils.error(("'%s' is not a valid direction"):format(direction))
@@ -73,29 +110,48 @@ function M.jump_to_status(direction, count, statuses)
     -- count must be positive in order to be used to the determine how many statuses we need to visit
     count = math.abs(count)
 
-    for lnum = start, stop, step do
-        local entry = oil.get_entry_on_line(buf, lnum)
+    ---@param _start integer
+    ---@param _stop integer
+    ---@param _step 1|-1
+    ---@return integer|nil
+    local find_nth_entry = function(_start, _stop, _step)
+        for lnum = _start, _stop, _step do
+            local entry = oil.get_entry_on_line(buf, lnum)
 
-        if not entry then
-            utils.error(("failed to parse entry: lnum=%d"):format(lnum))
-            return
-        end
-
-        local entry_status = repo_status[oil_dir .. entry.name]
-
-        if entry_status ~= nil then
-            if
-                vim.tbl_contains(statuses.index, entry_status.index)
-                or vim.tbl_contains(statuses.working_tree, entry_status.working_tree)
-            then
-                count = count - 1
-            end
-
-            if count == 0 then
-                vim.api.nvim_win_set_cursor(win, { lnum, 0 })
+            if not entry then
+                utils.error(("failed to parse entry: lnum=%d"):format(lnum))
                 return
             end
+
+            local entry_status = repo_status[oil_dir .. entry.name]
+
+            if entry_status ~= nil then
+                if
+                    vim.tbl_contains(statuses.index, entry_status.index)
+                    or vim.tbl_contains(statuses.working_tree, entry_status.working_tree)
+                then
+                    count = count - 1
+                end
+
+                if count == 0 then
+                    return lnum
+                end
+            end
         end
+
+        return nil
+    end
+
+    local lnum = find_nth_entry(start, stop, step)
+    if lnum == nil and wrap then
+        lnum = find_nth_entry(wrap_start, wrap_stop, wrap_step)
+    end
+
+    if lnum ~= nil then
+        vim.cmd("normal! m'") -- add current cursor position to the jumplist
+        vim.api.nvim_win_set_cursor(win, { lnum, 0 })
+
+        return
     end
 
     utils.warn("no status valid to move to")
