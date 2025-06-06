@@ -3,7 +3,6 @@ local api = require("oil-git-signs.api")
 local config = require("oil-git-signs.config")
 local git = require("oil-git-signs.git")
 local oil = require("oil")
-local oil_util = require("oil.util")
 local utils = require("oil-git-signs.utils")
 local unpack = unpack or table.unpack
 
@@ -138,13 +137,9 @@ function M.buf_init_autocmds(evt)
         -- and the other would monitor just the git index. Unfortunately libuv currently only
         -- supports recursive file change detection on OSX and Windows.
         local watcher = FsWatcher.new(string.format("%s/.git/index", repo_root))
-        watcher:register_callback(function(_, _, events)
-            if not events.change then
-                return
-            end
-
+        watcher:register_callback(utils.apply_debounce(function()
             api.refresh_git_status(repo_root)
-        end)
+        end, 75))
         watcher:start()
         M.RepoWatcherList[repo_root] = watcher
 
@@ -153,9 +148,8 @@ function M.buf_init_autocmds(evt)
             group = repo_watcher_augroup,
             ---@param event oil_git_signs.AutoCmdEvent
             callback = function(event)
-                local buf_name = vim.api.nvim_buf_get_name(event.buf)
-                local _, event_path = oil_util.parse_url(buf_name)
-                local event_root = git.get_root(assert(event_path, "could not parse oil url"))
+                local event_path = assert(utils.get_oil_buf_path(event.buf), "could not parse oil url")
+                local event_root = git.get_root(event_path)
 
                 if event_root ~= repo_root then
                     return

@@ -16,11 +16,9 @@ function M.init_extmark_provider(namespace)
                 return
             end
 
-            local buf_name = vim.api.nvim_buf_get_name(bufnr)
-            local _, oil_cwd = require("oil.util").parse_url(buf_name)
-
+            local oil_cwd = utils.get_oil_buf_path(bufnr)
             if oil_cwd == nil then
-                utils.error(("failed to parse oil dir for buffer %d: '%s'"):format(bufnr, buf_name))
+                utils.error(("failed to parse oil dir for buffer %d"):format(bufnr))
                 return
             end
 

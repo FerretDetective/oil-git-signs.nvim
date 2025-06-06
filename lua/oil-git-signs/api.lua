@@ -5,7 +5,6 @@ local git = require("oil-git-signs.git")
 local utils = require("oil-git-signs.utils")
 
 local oil = require("oil")
-local oil_utils = require("oil.util")
 
 ---Navigate the cursor to an entry with a given status.
 ---
@@ -101,9 +100,7 @@ function M.jump_to_status(direction, count, statuses, wrap)
         return
     end
 
-    local buf_name = vim.api.nvim_buf_get_name(buf)
-    local _, oil_dir = oil_utils.parse_url(buf_name)
-    assert(oil_dir, "failed to parse oil url")
+    local oil_dir = assert(utils.get_oil_buf_path(buf), "failed to parse oil url")
     local repo_root = assert(git.get_root(oil_dir), "failed to get repo root")
     local repo_status = assert(git.RepoStatusCache[repo_root], "failed to get repo status").status
 
@@ -309,13 +306,11 @@ end
 ---
 ---To get the path to a repo's root from a given oil buffer use the following:
 ---```lua
----local oil_utils = require("oil.util")
----local oil_git = require("oil-git-signs.git")
+---local git = require("oil-git-signs.git")
+---local utils = require("oil-git-signs.utils")
 ---
----local buf = vim.api.nvim_get_current_buf()
----local buf_name = vim.api.nvim_buf_get_name(buf)
----local _, oil_dir = oil_utils.parse_url(buf_name)
----local repo_root_path = oil_git.get_root(assert(oil_dir))
+---local oil_dir = assert(utils.get_oil_buf_path(0))
+---local repo_root_path = assert(git.get_root(oil_dir))
 ---```
 ---@param repo_root_path string? if nil and in an oil buffer, try that buffer's repo_root else fail
 function M.refresh_git_status(repo_root_path)
@@ -325,12 +320,8 @@ function M.refresh_git_status(repo_root_path)
             return
         end
 
-        local buf = vim.api.nvim_get_current_buf()
-        local buf_name = vim.api.nvim_buf_get_name(buf)
-        local _, oil_dir = oil_utils.parse_url(buf_name)
-        assert(oil_dir, "failed to parse oil url")
-
-        repo_root_path = git.get_root(oil_dir)
+        local oil_dir = assert(utils.get_oil_buf_path(0), "failed to parse oil url")
+        repo_root_path = assert(git.get_root(oil_dir), "failed to get git root")
     end
 
     vim.schedule(function()

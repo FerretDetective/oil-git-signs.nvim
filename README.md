@@ -542,13 +542,11 @@ root.
 To get the path to a repository's root from a given oil buffer use the following:
 
 ```lua
-local oil_utils = require("oil.util")
-local oil_git = require("oil-git-signs.git")
+local git = require("oil-git-signs.git")
+local utils = require("oil-git-signs.utils")
 
-local buf = vim.api.nvim_get_current_buf()
-local buf_name = vim.api.nvim_buf_get_name(buf)
-local _, oil_dir = oil_utils.parse_url(buf_name)
-local repo_root_path = oil_git.get_root(assert(oil_dir))
+local oil_dir = assert(utils.get_oil_buf_path(0))
+local repo_root_path = assert(git.get_root(oil_dir))
 ```
 
 ##### Type

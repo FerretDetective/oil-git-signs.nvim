@@ -1,6 +1,7 @@
-local M = {}
-
+local oil = require("oil.util")
 local unpack = unpack or table.unpack
+
+local M = {}
 
 ---Return start and stop line numbers of the current visual selection,
 ---or the current cursor position when not in visual mode.
@@ -43,6 +44,26 @@ end
 ---@return integer ns_id
 function M.buf_get_namespace(buffer)
     return vim.api.nvim_create_namespace(("OilGitSigns_buf-%d"):format(buffer))
+end
+
+---Wrapper to retrieve the path of the directory a oil buffer is showing. This exists
+---to fix issues with windows paths.
+---@param buf integer
+---@return string|nil
+function M.get_oil_buf_path(buf)
+    local _, oil_dir = oil.parse_url(vim.api.nvim_buf_get_name(buf))
+
+    if oil_dir == nil then
+        return nil
+    end
+
+    if jit.os:find("Windows") then
+        local drive, path = oil_dir:match("^/(%a-)/(.+)$")
+
+        return ("%s:/%s"):format(drive, path)
+    end
+
+    return oil_dir
 end
 
 ---Create a wrapper for a function which ensures that function is called at most every `time_ms` millis
