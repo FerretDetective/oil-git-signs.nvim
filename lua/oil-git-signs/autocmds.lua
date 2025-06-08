@@ -148,7 +148,8 @@ function M.buf_init_autocmds(evt)
             group = repo_watcher_augroup,
             ---@param event oil_git_signs.AutoCmdEvent
             callback = function(event)
-                local event_path = assert(utils.get_oil_buf_path(event.buf), "could not parse oil url")
+                local event_path =
+                    assert(utils.get_oil_buf_path(event.buf), "could not parse oil url")
                 local event_root = git.get_root(event_path)
 
                 if event_root ~= repo_root then
