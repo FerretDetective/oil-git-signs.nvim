@@ -163,19 +163,20 @@ function M.query_git_status(repo_root, on_completetion)
                     -- which status should be displayed when viewed from the parent directory.
                     -- And if this occurs in a nested directory than this status needs to
                     -- propagate recursively to all parents.
+                    if vim.fs.dirname(fullpath) ~= repo_root then
+                        local prev_status = new_status
 
-                    local prev_status = new_status
-                    local start_path = fullpath
-                    for dir in vim.fs.parents(start_path) do
-                        if dir == repo_root or vim.fs.dirname(start_path) == repo_root then
-                            break
+                        for dir in vim.fs.parents(fullpath) do
+                            if dir == repo_root then
+                                break
+                            end
+
+                            local existing_status = status[dir]
+                            local resolved_status = resolve_collision(existing_status, prev_status)
+
+                            prev_status = resolved_status
+                            status[dir] = resolved_status
                         end
-
-                        local existing_status = status[dir]
-                        local resolved_status = resolve_collision(existing_status, prev_status)
-
-                        prev_status = resolved_status
-                        status[dir] = resolved_status
                     end
                 end
             end
