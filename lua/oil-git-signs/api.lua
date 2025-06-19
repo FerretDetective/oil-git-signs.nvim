@@ -321,7 +321,11 @@ function M.refresh_git_status(repo_root_path)
         end
 
         local oil_dir = assert(utils.get_oil_buf_path(0), "failed to parse oil url")
-        repo_root_path = assert(git.get_root(oil_dir), "failed to get git root")
+
+        repo_root_path = git.get_root(oil_dir)
+        if repo_root_path == nil then
+            return
+        end
     end
 
     vim.schedule(function()
