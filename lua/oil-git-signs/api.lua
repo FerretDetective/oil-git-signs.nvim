@@ -312,8 +312,9 @@ end
 ---local oil_dir = assert(utils.get_oil_buf_path(0))
 ---local repo_root_path = assert(git.get_root(oil_dir))
 ---```
----@param repo_root_path string? if nil and in an oil buffer, try that buffer's repo_root else fail
-function M.refresh_git_status(repo_root_path)
+---@param repo_root_path? string If nil and in an oil buffer, try that buffer's repo_root else fail
+---@param wait_if_busy? boolean If the repo is already being refresh wait until it's done and refresh again. Default is false.
+function M.refresh_git_status(repo_root_path, wait_if_busy)
     if repo_root_path == nil then
         if vim.bo.filetype ~= "oil" then
             utils.error("repo_root_path is missing, and it cannot be inferred for a non-oil buffer")
@@ -326,6 +327,12 @@ function M.refresh_git_status(repo_root_path)
         if repo_root_path == nil then
             return
         end
+    end
+
+    if wait_if_busy and git.RepoBeingQueried[repo_root_path] then
+        vim.wait(1500, function()
+            return not git.RepoBeingQueried[repo_root_path]
+        end)
     end
 
     vim.schedule(function()

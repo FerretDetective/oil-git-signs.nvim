@@ -137,9 +137,9 @@ function M.buf_init_autocmds(evt)
         -- and the other would monitor just the git index. Unfortunately libuv currently only
         -- supports recursive file change detection on OSX and Windows.
         local watcher = FsWatcher.new(string.format("%s/.git/index", repo_root))
-        watcher:register_callback(utils.apply_debounce(function()
-            api.refresh_git_status(repo_root)
-        end, 75))
+        watcher:register_callback(function()
+            api.refresh_git_status(repo_root, true)
+        end)
         watcher:start()
         M.RepoWatcherList[repo_root] = watcher
 
@@ -156,7 +156,7 @@ function M.buf_init_autocmds(evt)
                     return
                 end
 
-                api.refresh_git_status(repo_root)
+                api.refresh_git_status(repo_root, true)
             end,
         })
 
