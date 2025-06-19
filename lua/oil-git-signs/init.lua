@@ -60,6 +60,57 @@ function M.setup(opts)
         callback = autocmds.buf_init_autocmds,
     })
     extmarks.init_extmark_provider(vim.api.nvim_create_namespace("OilGitSignsDecorationsProvider"))
+
+    -- The following is needed to prevent ogs from blocking oil.nvim's git based file operations
+    local oil_git = require("oil.git")
+    local old_rm, old_add, old_mv = oil_git.rm, oil_git.add, oil_git.mv
+
+    ---@diagnostic disable-next-line: duplicate-set-field
+    oil_git.rm = function(path, cb)
+        local repo_root = git.get_root(path)
+        if not repo_root then
+            return
+        end
+
+        if
+            vim.wait(1500, function()
+                return not git.RepoBeingQueried[repo_root]
+            end, 100)
+        then
+            return old_rm(path, cb)
+        end
+    end
+
+    ---@diagnostic disable-next-line: duplicate-set-field
+    oil_git.add = function(path, cb)
+        local repo_root = git.get_root(path)
+        if not repo_root then
+            return
+        end
+
+        if
+            vim.wait(1500, function()
+                return not git.RepoBeingQueried[repo_root]
+            end, 100)
+        then
+            return old_add(path, cb)
+        end
+    end
+
+    ---@diagnostic disable-next-line: duplicate-set-field
+    oil_git.mv = function(entry_type, src_path, dest_path, cb)
+        if
+            vim.wait(1500, function()
+                local src_root = git.get_root(src_path)
+                local dest_root = git.get_root(dest_path)
+
+                return (src_root == nil or not git.RepoBeingQueried[src_root])
+                    and (dest_root == nil or not git.RepoBeingQueried[dest_root])
+            end, 100)
+        then
+            return old_mv(entry_type, src_path, dest_path, cb)
+        end
+    end
 end
 
 return M
