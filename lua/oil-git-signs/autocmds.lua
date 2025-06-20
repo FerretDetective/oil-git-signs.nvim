@@ -54,8 +54,11 @@ function M.buf_init_autocmds(evt)
         vim.keymap.set(unpack(keymap))
     end
 
+    local buf_augroup = utils.buf_get_augroup(buf)
+
     vim.api.nvim_create_autocmd("User", {
         pattern = "OilGitSignsQueryGitStatusDone",
+        group = buf_augroup,
         ---@param event oil_git_signs.AutoCmdEvent
         callback = function(event)
             if event.data["repo_root_path"] ~= repo_root or event.buf ~= buf then
@@ -73,7 +76,7 @@ function M.buf_init_autocmds(evt)
 
     -- make sure to clean up auto commands when oil deletes the buffer
     vim.api.nvim_create_autocmd("BufWipeout", {
-        desc = "cleanup oil-git-signs autocmds when oil unloads the buf",
+        group = buf_augroup,
         buffer = buf,
         once = true,
         callback = vim.schedule_wrap(function()
@@ -97,11 +100,11 @@ function M.buf_init_autocmds(evt)
 
     -- initial setup for first attachment to a repository
     if cur_ref_count == 0 then
-        local repo_watcher_augroup = utils.repo_get_augroup(repo_root)
+        local repo_augroup = utils.repo_get_augroup(repo_root)
 
         vim.api.nvim_create_autocmd("User", {
             pattern = "OilGitSignsQueryGitStatus",
-            group = repo_watcher_augroup,
+            group = repo_augroup,
             ---@type fun(event: oil_git_signs.AutoCmdEvent)
             callback = function(event)
                 local repo = event.data["repo_root_path"]
@@ -145,7 +148,7 @@ function M.buf_init_autocmds(evt)
 
         vim.api.nvim_create_autocmd("User", {
             pattern = "OilMutationComplete",
-            group = repo_watcher_augroup,
+            group = repo_augroup,
             ---@param event oil_git_signs.AutoCmdEvent
             callback = function(event)
                 local event_path =
