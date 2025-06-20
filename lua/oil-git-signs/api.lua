@@ -329,10 +329,14 @@ function M.refresh_git_status(repo_root_path, wait_if_busy)
         end
     end
 
-    if wait_if_busy and git.RepoBeingQueried[repo_root_path] then
-        vim.wait(1500, function()
-            return not git.RepoBeingQueried[repo_root_path]
-        end)
+    if git.RepoBeingQueried[repo_root_path] then
+        if wait_if_busy then
+            vim.wait(1500, function()
+                return not git.RepoBeingQueried[repo_root_path]
+            end)
+        else
+            return
+        end
     end
 
     vim.schedule(function()
