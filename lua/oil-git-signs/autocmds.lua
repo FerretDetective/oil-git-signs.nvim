@@ -8,15 +8,6 @@ local unpack = unpack or table.unpack
 
 local M = {}
 
----@class oil_git_signs.AutoCmdEvent
----@field id integer autocommand id
----@field event string name of the triggered event
----@field group integer? autocommand group id, if any
----@field match string expanded value of `<amatch>`
----@field buf integer expanded value of `<abuf>`
----@field file string expanded value of `<afile>`
----@field data any arbitrary data passed from `vim.api.nvim_exec_autocmds`
-
 ---Keep track the `FSWatcher` for each repository
 ---@type table<string, oil_git_signs.FsWatcher?>
 M.RepoWatcherList = {}
@@ -25,7 +16,7 @@ M.RepoWatcherList = {}
 ---@type table<string, integer?>
 M.RepoAttachedCount = {}
 
----@param evt oil_git_signs.AutoCmdEvent
+---@param evt vim.api.keyset.create_autocmd.callback_args
 function M.buf_init_autocmds(evt)
     local buf = evt.buf
 
@@ -59,7 +50,7 @@ function M.buf_init_autocmds(evt)
     vim.api.nvim_create_autocmd("User", {
         pattern = "OilGitSignsQueryGitStatusDone",
         group = buf_augroup,
-        ---@param event oil_git_signs.AutoCmdEvent
+        ---@param event vim.api.keyset.create_autocmd.callback_args
         callback = function(event)
             if event.data["repo_root_path"] ~= repo_root or event.buf ~= buf then
                 return
@@ -105,7 +96,7 @@ function M.buf_init_autocmds(evt)
         vim.api.nvim_create_autocmd("User", {
             pattern = "OilGitSignsQueryGitStatus",
             group = repo_augroup,
-            ---@type fun(event: oil_git_signs.AutoCmdEvent)
+            ---@type fun(event: vim.api.keyset.create_autocmd.callback_args)
             callback = function(event)
                 local repo = event.data["repo_root_path"]
 
@@ -149,7 +140,7 @@ function M.buf_init_autocmds(evt)
         vim.api.nvim_create_autocmd("User", {
             pattern = "OilMutationComplete",
             group = repo_augroup,
-            ---@param event oil_git_signs.AutoCmdEvent
+            ---@param event vim.api.keyset.create_autocmd.callback_args
             callback = function(event)
                 local event_path =
                     assert(utils.get_oil_buf_path(event.buf), "could not parse oil url")
