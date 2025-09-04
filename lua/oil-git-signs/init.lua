@@ -67,10 +67,11 @@ function M.setup(opts)
 
     ---@diagnostic disable-next-line: duplicate-set-field
     oil_git.rm = function(path, cb)
-        local repo_root = git.get_root(path)
-        if not repo_root then
-            return
+        if not vim.b.oil_git_signs_exists then
+            return old_rm(path, cb)
         end
+
+        local repo_root = assert(git.get_root(path), "ogs attached, but couldn't find git root")
 
         if
             vim.wait(1500, function()
@@ -83,10 +84,11 @@ function M.setup(opts)
 
     ---@diagnostic disable-next-line: duplicate-set-field
     oil_git.add = function(path, cb)
-        local repo_root = git.get_root(path)
-        if not repo_root then
-            return
+        if not vim.b.oil_git_signs_exists then
+            return old_add(path, cb)
         end
+
+        local repo_root = assert(git.get_root(path), "ogs attached, but couldn't find git root")
 
         if
             vim.wait(1500, function()
@@ -99,11 +101,16 @@ function M.setup(opts)
 
     ---@diagnostic disable-next-line: duplicate-set-field
     oil_git.mv = function(entry_type, src_path, dest_path, cb)
+        if not vim.b.oil_git_signs_exists then
+            return old_mv(entry_type, src_path, dest_path, cb)
+        end
+
         if
             vim.wait(1500, function()
                 local src_root = git.get_root(src_path)
                 local dest_root = git.get_root(dest_path)
 
+                -- don't wait if the src/dest is not git tracked, or not being queried
                 return (src_root == nil or not git.RepoBeingQueried[src_root])
                     and (dest_root == nil or not git.RepoBeingQueried[dest_root])
             end, 100)
