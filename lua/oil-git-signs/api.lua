@@ -321,7 +321,7 @@ function M.refresh_git_status(repo_root_path, wait_if_busy)
             return
         end
 
-        local oil_dir = assert(utils.get_oil_buf_path(0), "failed to parse oil url")
+        local oil_dir = assert(utils.get_oil_buf_path(0), "failed to get oil buf path")
 
         repo_root_path = git.get_root(oil_dir)
         if repo_root_path == nil then

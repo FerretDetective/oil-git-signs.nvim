@@ -180,6 +180,14 @@ function M.query_git_status(repo_root, on_completetion)
                     end
                 end
             end
+        else
+            utils.error(
+                string.format(
+                    "git failed to return status with exit code: %d\nstderr: %s",
+                    out.code,
+                    out.stderr or "EMPTY"
+                )
+            )
         end
 
         M.RepoBeingQueried[repo_root] = false
