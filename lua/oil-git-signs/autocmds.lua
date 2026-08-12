@@ -16,10 +16,8 @@ M.RepoWatcherList = {}
 ---@type table<string, integer?>
 M.RepoAttachedCount = {}
 
----@param evt vim.api.keyset.create_autocmd.callback_args
-function M.buf_init_autocmds(evt)
-    local buf = evt.buf
-
+---@param buf integer
+function M.buf_init_autocmds(buf)
     if vim.b[buf].oil_git_signs_exists then
         return
     end
