@@ -32,14 +32,27 @@ Add git information about your files when working with [oil.nvim](https://github
 I have only tested this plugin with lazy.nvim, but I don't see a reason other plugin managers
 wouldn't work. If you run into any issues, please open an issue and I will attempt to resolve it.
 
+### vim.pack
+```lua
+vim.pack.add({
+    "https://github.com/stevearc/oil.nvim",
+    "https://github.com/FerretDetective/oil-git-signs.nvim",
+})
+
+require("oil").setup({
+    win_options = {
+        signcolumn = "yes:2",
+        statuscolumn = "",
+    },
+})
+```
+
 ### Lazy.nvim
 ```lua
 {
     {
-        -- I recommend not installing this a dependency of oil as it isn't required
-        -- until you open an oil buffer
         "FerretDetective/oil-git-signs.nvim",
-        ft = "oil",
+        dependencies = { "stevearc/oil.nvim" }
         ---@module "oil_git_signs"
         ---@type oil_git_signs.Config
         opts = {},
@@ -54,9 +67,6 @@ wouldn't work. If you run into any issues, please open an issue and I will attem
                 statuscolumn = "",
             },
         },
-        -- Optional dependencies
-        dependencies = { { "echasnovski/mini.icons", opts = {} } },
-        -- dependencies = { "nvim-tree/nvim-web-devicons" }, -- use if prefer nvim-web-devicons
     },
 }
 ```
@@ -201,63 +211,58 @@ local defaults = {
     </summary>
 
 ```lua
-{
-
-    "FerretDetective/oil-git-signs.nvim",
-    ft = "oil",
-    opts = {
-        keymaps = {
-            {
-                "n",
-                "[H",
-                function()
-                    require("oil-git-signs").jump_to_status("up", -vim.v.count1)
-                end,
-                { desc = "Jump to first git status" },
-            },
-            {
-                "n",
-                "]H",
-                function()
-                    require("oil-git-signs").jump_to_status("down", -vim.v.count1)
-                end,
-                { desc = "Jump to last git status" },
-            },
-            {
-                "n",
-                "[h",
-                function()
-                    require("oil-git-signs").jump_to_status("up", vim.v.count1)
-                end,
-                { desc = "Jump to prev git status" },
-            },
-            {
-                "n",
-                "]h",
-                function()
-                    require("oil-git-signs").jump_to_status("down", vim.v.count1)
-                end,
-                { desc = "Jump to next git status" },
-            },
-            {
-                { "n", "v" },
-                "<Leader>hs",
-                function()
-                    require("oil-git-signs").stage_selected()
-                end,
-                { desc = "Stage selected entries" },
-            },
-            {
-                { "n", "v" },
-                "<Leader>hu",
-                function()
-                    require("oil-git-signs").unstage_selected()
-                end,
-                { desc = "Unstage selected entries" },
-            },
+require("oil-git-signs").setup({
+    keymaps = {
+        {
+            "n",
+            "[H",
+            function()
+                require("oil-git-signs").jump_to_status("up", -vim.v.count1)
+            end,
+            { desc = "Jump to first git status" },
         },
-    },
-}
+        {
+            "n",
+            "]H",
+            function()
+                require("oil-git-signs").jump_to_status("down", -vim.v.count1)
+            end,
+            { desc = "Jump to last git status" },
+        },
+        {
+            "n",
+            "[h",
+            function()
+                require("oil-git-signs").jump_to_status("up", vim.v.count1)
+            end,
+            { desc = "Jump to prev git status" },
+        },
+        {
+            "n",
+            "]h",
+            function()
+                require("oil-git-signs").jump_to_status("down", vim.v.count1)
+            end,
+            { desc = "Jump to next git status" },
+        },
+        {
+            { "n", "v" },
+            "<Leader>hs",
+            function()
+                require("oil-git-signs").stage_selected()
+            end,
+            { desc = "Stage selected entries" },
+        },
+        {
+            { "n", "v" },
+            "<Leader>hu",
+            function()
+                require("oil-git-signs").unstage_selected()
+            end,
+            { desc = "Unstage selected entries" },
+        },
+    }
+})
 ```
 
 </details>
@@ -603,8 +608,8 @@ ogs.Config: {
 
 #### ogs.setup
 ##### Description
-This is the function that sets up this plugin. It must be called for it to work. If no options are
-passed the default configuration will be used. See [Options](#options) for more details.
+This function updates the current options. It does **not** need to be called for it to work. If no
+options are passed the default configuration will be used. See [Options](#options) for more details.
 
 ##### Type
 ```
@@ -641,6 +646,15 @@ vim.b.oil_git_signs_summary: {
         modified: integer,
     },
 }
+```
+
+#### vim.g.oil_git_signs_setup
+##### Description
+This variable tracks if the preliminary setup code (e.g., highlight groups) has been run.
+
+##### Type
+```
+vim.g.oil_git_signs_setup: boolean?
 ```
 
 ## Highlights
