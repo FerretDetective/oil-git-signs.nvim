@@ -68,8 +68,8 @@ function M.jump_to_status(direction, count, statuses, wrap)
             stop = cursor_lnum
             step = -1
 
-            -- wrap from cursor (inclusive) until SOB
-            wrap_start = stop
+            -- wrap from cursor (exclusive) until SOB
+            wrap_start = stop - 1
             wrap_stop = 1
             wrap_step = -1
         end
@@ -90,8 +90,8 @@ function M.jump_to_status(direction, count, statuses, wrap)
             stop = cursor_lnum
             step = 1
 
-            -- wrap from cursor (inclusive) until EOB
-            wrap_start = stop
+            -- wrap from cursor (exclusive) until EOB
+            wrap_start = stop + 1
             wrap_stop = buf_len
             wrap_step = 1
         end
